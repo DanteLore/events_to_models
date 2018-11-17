@@ -65,3 +65,5 @@ seq 100 | bin/kafka-console-producer.sh --broker-list localhost:9092 --topic tes
 ## Example data
 
 The beer data comes from: https://www.kaggle.com/nickhould/craft-cans#beers.csv
+
+Place it in a dir called 'data' in the root of this project. I don't think it's OK to distribute the data via git!

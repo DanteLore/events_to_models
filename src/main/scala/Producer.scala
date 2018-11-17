@@ -16,9 +16,11 @@ object Producer {
 
     val producer = new KafkaProducer[String, String](properties)
 
-    (1 to 10).foreach(i => {
+    val bufferedSource = io.Source.fromFile("data/beers.csv")
+    for (line <- bufferedSource.getLines) {
       // The call to 'get' here forces us to be synchronous by waiting for the send to complete
-      producer.send(new ProducerRecord[String, String]("test", s"Hello $i")).get()
-    })
+      producer.send(new ProducerRecord[String, String]("test", line)).get()
+    }
+    bufferedSource.close()
   }
 }
