@@ -8,8 +8,10 @@ libraryDependencies ++= {
   Seq(
     "org.apache.kafka" %% "kafka" % "2.0.0",
     "org.apache.kafka" % "kafka-clients" % "0.10.0.0",
+    "ch.qos.logback" % "logback-classic" % "1.0.3",
+    "ch.qos.logback" % "logback-core" % "1.0.3",
     "org.slf4j" % "slf4j-api" % "1.7.1",
-    "org.slf4j" % "log4j-over-slf4j" % "1.7.1",  // for any java classes looking for this
-    "ch.qos.logback" % "logback-classic" % "1.0.3"
+    "javax.ws.rs" % "javax.ws.rs-api" % "2.1" artifacts (Artifact("javax.ws.rs-api", "jar", "jar")),
+    "org.apache.kafka" %% "kafka-streams-scala" % "2.0.1"
   )
 }
