@@ -69,3 +69,87 @@ The beer data comes from: https://www.kaggle.com/nickhould/craft-cans#beers.csv
 Place it in a dir called 'data' in the root of this project. I don't think it's OK to distribute the data via git!
 
 Note that, because I am too lazy to parse CSV properly, I manually removed all the "" escaped string fields.  There are two beers and one brewery with names including commas.
+
+
+## Some KSQL Queries
+
+Once you've got the data loaded into the topic using the BeerProducer and sample data from above, you can start to explore some KSQL queries:
+
+Use the KSQL client in `.../bin/ksql`.  To make the queries start from the top of the queue when they are run, execute the following when you start the KSQL client:
+
+```
+SET 'auto.offset.reset' = 'earliest';
+```
+
+### Streams
+
+Create a stream over the raw beer topic so we can query the incoming data with KSQL:
+```
+ksql> create stream beer_stream with (kafka_topic='beers', value_format='avro');
+
+ Message
+----------------
+ Stream created
+----------------
+
+ksql> describe beer_stream;
+
+Name                 : BEER_STREAM
+ Field      | Type
+----------------------------------------
+ ROWTIME    | BIGINT           (system)
+ ROWKEY     | VARCHAR(STRING)  (system)
+ ROW        | INTEGER
+ ABV        | DOUBLE
+ IBU        | DOUBLE
+ ID         | INTEGER
+ NAME       | VARCHAR(STRING)
+ STYLE      | VARCHAR(STRING)
+ BREWERY_ID | INTEGER
+ OUNCES     | DOUBLE
+----------------------------------------
+For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
+```
+
+Run some basic queries on the stream - first one selects all beers, second one selects very strong beers:
+
+```
+ksql> select * from beer_stream limit 5;
+1542628134266 | null | 0 | 0.05 | null | 1436 | Pub Beer | American Pale Lager | 408 | 12.0
+1542628134284 | null | 1 | 0.066 | null | 2265 | Devil's Cup | American Pale Ale (APA) | 177 | 12.0
+1542628134287 | null | 2 | 0.071 | null | 2264 | Rise of the Phoenix | American IPA | 177 | 12.0
+1542628134289 | null | 3 | 0.09 | null | 2263 | Sinister | American Double / Imperial IPA | 177 | 12.0
+1542628134292 | null | 4 | 0.075 | null | 2262 | Sex and Candy | American IPA | 177 | 12.0
+Limit Reached
+Query terminated
+
+ksql> select * from beer_stream where abv > 0.07 limit 5;
+1542628134287 | null | 2 | 0.071 | null | 2264 | Rise of the Phoenix | American IPA | 177 | 12.0
+1542628134289 | null | 3 | 0.09 | null | 2263 | Sinister | American Double / Imperial IPA | 177 | 12.0
+1542628134292 | null | 4 | 0.075 | null | 2262 | Sex and Candy | American IPA | 177 | 12.0
+1542628134295 | null | 5 | 0.077 | null | 2261 | Black Exodus | Oatmeal Stout | 177 | 12.0
+1542628134305 | null | 9 | 0.086 | null | 2131 | Cone Crusher | American Double / Imperial IPA | 177 | 12.0
+Limit Reached
+Query terminated
+```
+
+You can make streams persistent, running them forever based on a KSQL query.  Create a stream for very strong beers:
+
+```
+ksql> create stream very_strong_beers as select * from beer_stream where abv >= 0.07;
+
+ Message
+----------------------------
+ Stream created and running
+----------------------------
+```
+
+This query will now run forever, pushing all beers stronger than 7% into a topic `very_strong_beers`.  This is just a standard Kafka topic, so you can pull from it externally as well as using it as the basis of more KSQL jiggery pokery.  Note that the default topic and field names will be capitalised though, so you'll need to check that in the consumer.
+
+### Tables
+
+Create a table over the beer topic so we can explore the beers...
+```
+CREATE TABLE beer_table WITH (KAFKA_TOPIC='beers', VALUE_FORMAT='avro', KEY='id');
+```
+
