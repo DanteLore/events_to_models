@@ -1,3 +1,4 @@
+import java.lang.Double
 import java.time.Duration
 import java.util
 
@@ -33,7 +34,13 @@ object BeerConsumer {
       println(s"Read ${records.count()}")
 
       for (record <- records.iterator().asScala) {
-        println("Received message: (" + record.key() + ", " + record.value() + ") at offset " + record.offset())
+        val beer = record.value()
+        val name = beer.get("name").toString
+        val abv = beer.get("abv") match {
+          case null => "unknown"
+          case x : Double => s"${x * 100}%"
+        }
+        println(s"$name $abv")
       }
     }
   }
