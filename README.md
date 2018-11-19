@@ -148,8 +148,128 @@ This query will now run forever, pushing all beers stronger than 7% into a topic
 
 ### Tables
 
-Create a table over the beer topic so we can explore the beers...
+Note that the beer stream doesn't have a key (see nulls in 2nd column below):
 ```
-CREATE TABLE beer_table WITH (KAFKA_TOPIC='beers', VALUE_FORMAT='avro', KEY='id');
+ksql> describe beer_stream;
+
+Name                 : BEER_STREAM
+ Field      | Type
+----------------------------------------
+ ROWTIME    | BIGINT           (system)
+ ROWKEY     | VARCHAR(STRING)  (system)
+ ROW        | INTEGER
+ ABV        | DOUBLE
+ IBU        | DOUBLE
+ ID         | INTEGER
+ NAME       | VARCHAR(STRING)
+ STYLE      | VARCHAR(STRING)
+ BREWERY_ID | INTEGER
+ OUNCES     | DOUBLE
+----------------------------------------
+
+ksql> select * from beer_stream limit 4;
+1542628134266 | null | 0 | 0.05 | null | 1436 | Pub Beer | American Pale Lager | 408 | 12.0
+1542628134284 | null | 1 | 0.066 | null | 2265 | Devil's Cup | American Pale Ale (APA) | 177 | 12.0
+1542628134287 | null | 2 | 0.071 | null | 2264 | Rise of the Phoenix | American IPA | 177 | 12.0
+1542628134289 | null | 3 | 0.09 | null | 2263 | Sinister | American Double / Imperial IPA | 177 | 12.0
 ```
 
+We need to create a stream over the top with an added key - keys must be strings in KSQL at time of writing, thus the cast.
+
+```
+ksql> CREATE STREAM beer_stream_with_key
+    WITH (KAFKA_TOPIC='beer_stream_with_key', VALUE_FORMAT='avro')
+    AS SELECT CAST(id AS string) AS id, row, abv, ibu, name, style, brewery_id, ounces
+    FROM beer_stream PARTITION BY ID;
+
+ Message
+----------------------------
+ Stream created and running
+----------------------------
+
+ksql> select * from beer_stream_with_key limit 4;
+1542634100215 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542634100241 | 2264 | 2264 | 2 | 0.071 | null | Rise of the Phoenix | American IPA | 177 | 12.0
+1542634100263 | 2131 | 2131 | 9 | 0.086 | null | Cone Crusher | American Double / Imperial IPA | 177 | 12.0
+1542634100272 | 1980 | 1980 | 13 | 0.085 | null | Troll Destroyer | Belgian IPA | 177 | 12.0
+```
+
+Create a table over the beer topic so we can explore the beers...
+```
+ksql> CREATE TABLE beer_table WITH (KAFKA_TOPIC='beer_stream_with_key', VALUE_FORMAT='avro', KEY='id');
+
+ Message
+---------------
+ Table created
+---------------
+ksql> describe beer_table;
+
+Name                 : BEER_TABLE
+ Field      | Type
+----------------------------------------
+ ROWTIME    | BIGINT           (system)
+ ROWKEY     | VARCHAR(STRING)  (system)
+ ID         | VARCHAR(STRING)
+ ROW        | INTEGER
+ ABV        | DOUBLE
+ IBU        | DOUBLE
+ NAME       | VARCHAR(STRING)
+ STYLE      | VARCHAR(STRING)
+ BREWERY_ID | INTEGER
+ OUNCES     | DOUBLE
+----------------------------------------
+For runtime statistics and query details run: DESCRIBE EXTENDED <Stream,Table>;
+ksql> select * from beer_table limit 4;
+1542634282337 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542634282366 | 2262 | 2262 | 4 | 0.075 | null | Sex and Candy | American IPA | 177 | 12.0
+1542634282363 | 2263 | 2263 | 3 | 0.09 | null | Sinister | American Double / Imperial IPA | 177 | 12.0
+1542634282369 | 2261 | 2261 | 5 | 0.077 | null | Black Exodus | Oatmeal Stout | 177 | 12.0
+```
+
+The difference between a STREAM and a TABLE is that a table will automatically collapse events down, returning only the latest.  After running the producer several times, this can be seen by running:
+
+```
+ksql> select * from beer_table where name = 'Pub Beer';
+1542634282337 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+^CQuery terminated
+
+ksql> select * from beer_stream_with_key where name = 'Pub Beer';
+1542628134266 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542628516940 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542629007336 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542629014857 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542629062006 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542629446962 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542630134068 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542630969970 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542634100215 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+1542634282337 | 1436 | 1436 | 0 | 0.05 | null | Pub Beer | American Pale Lager | 408 | 12.0
+^CQuery terminated
+```
+
+Just to prove the above point further, let's look for beers over 10% ABV: There's four of them.  10% is a stupid strength for a beer!
+
+```
+ksql> select id, name, abv from beer_table where abv > 0.1;
+2564 | Lee Hill Series Vol. 4 - Manhattan Style Rye Ale | 0.10400000000000001
+2685 | London Balling | 0.125
+2621 | Csar | 0.12
+2565 | Lee Hill Series Vol. 5 - Belgian Style Quadrupel Ale | 0.128
+```
+
+Now, change the ABV of 'Pub Beer' to 0.11 in the `beers.csv` data file and _reload the whole file_ with the BeerProducer.
+
+This will insert new rows for every single beer into the table (we could have just inserted one for the changed row, but it would have meant more code changes).
+
+Let's look for beers over 10% again:  Lo and behold, there's 5 this time!
+
+```
+ksql> select id, name, abv from beer_table where abv > 0.1;
+1436 | Pub Beer | 0.11
+2565 | Lee Hill Series Vol. 5 - Belgian Style Quadrupel Ale | 0.128
+2685 | London Balling | 0.125
+2621 | Csar | 0.12
+2564 | Lee Hill Series Vol. 4 - Manhattan Style Rye Ale | 0.10400000000000001
+```
+
+So the table has magically squashed the event data down into current state data!  Very exciting.
