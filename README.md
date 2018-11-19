@@ -259,7 +259,7 @@ ksql> select id, name, abv from beer_table where abv > 0.1;
 
 Now, change the ABV of 'Pub Beer' to 0.11 in the `beers.csv` data file and _reload the whole file_ with the BeerProducer.
 
-This will insert new rows for every single beer into the table (we could have just inserted one for the changed row, but it would have meant more code changes).
+This will send new events for every single beer into the topic (we could have just sent one for the changed row, but it would have meant more code changes).
 
 Let's look for beers over 10% again:  Lo and behold, there's 5 this time!
 
