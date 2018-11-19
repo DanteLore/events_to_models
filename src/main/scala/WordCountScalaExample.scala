@@ -35,5 +35,4 @@ object WordCountScalaExample extends App {
   sys.ShutdownHookThread {
     streams.close(10, TimeUnit.SECONDS)
   }
-
 }

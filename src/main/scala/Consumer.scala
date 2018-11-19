@@ -2,7 +2,7 @@ import java.time.Duration
 import java.util
 
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
+import org.apache.kafka.common.serialization.StringDeserializer
 
 import scala.collection.JavaConverters._
 
@@ -23,7 +23,7 @@ object Consumer {
       println(s"Read ${records.count()}")
 
       for (record <- records.iterator().asScala) {
-        println("\n\n Received message: (" + record.key() + ", " + record.value() + ") at offset " + record.offset())
+        println("Received message: (" + record.key() + ", " + record.value() + ") at offset " + record.offset())
       }
     }
   }
