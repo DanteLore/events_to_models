@@ -6,20 +6,26 @@ import org.apache.kafka.common.serialization.StringDeserializer
 
 import scala.collection.JavaConverters._
 
-object Consumer {
-  def main(args: Array[String]): Unit = {
+object BeerConsumer {
+
+  lazy val consumer: KafkaConsumer[String, String] = {
+
     val properties = new util.Properties()
     properties.put("bootstrap.servers", "localhost:9092")
     properties.put("group.id", "cheese-group")
     properties.put("key.deserializer", classOf[StringDeserializer])
     properties.put("value.deserializer", classOf[StringDeserializer])
+    properties.put("auto.offset.reset", "earliest")
 
-    val kafkaConsumer = new KafkaConsumer[String, String](properties)
-    kafkaConsumer.subscribe(util.Arrays.asList("test"))
+    new KafkaConsumer[String, String](properties)
+  }
+
+  def main(args: Array[String]): Unit = {
+    consumer.subscribe(util.Arrays.asList("test"))
 
     var i = 0
     while (true) {
-      val records = kafkaConsumer.poll(Duration.ofSeconds(5))
+      val records = consumer.poll(Duration.ofSeconds(5))
       println(s"Read ${records.count()}")
 
       for (record <- records.iterator().asScala) {

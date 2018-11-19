@@ -1,10 +1,10 @@
 import java.util.Properties
 
+import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
-import io.confluent.kafka.serializers.KafkaAvroSerializer
+import org.apache.kafka.common.serialization.StringSerializer
 
 import scala.io.Source
 
