@@ -23,6 +23,7 @@ object SaleProducer {
 
       "fields": [
          {"name": "beer_id", "type": "int"},
+         {"name": "bar", "type": "int"},
          {"name": "price",   "type": "int"}
       ]
     }""")
@@ -47,6 +48,7 @@ object SaleProducer {
   def createSale : GenericRecord = {
     val sale: GenericRecord = new GenericData.Record(schema)
     sale.put("beer_id", beerIds(Random.nextInt(beerIds.size)).toInt)
+    sale.put("bar", Random.nextInt(4) + 1) // There are 4 bars (i.e. 4 cash registers)
     sale.put("price", if(Random.nextDouble() > 0.75) 2 else 1) // Beer festival; 1 token per half
     sale
   }

@@ -262,7 +262,7 @@ Now, change the ABV of 'Pub Beer' to 0.11 in the `beers.csv` data file and _relo
 This will send new events for every single beer into the topic (we could have just sent one for the changed row, but it would have meant more code changes).
 
 Let's look for beers over 10% again:  Lo and behold, there's 5 this time!
-
+curl -X DELETE http://localhost:8081/subjects/Kafka-value
 ```
 ksql> select id, name, abv from beer_table where abv > 0.1;
 1436 | Pub Beer | 0.11
