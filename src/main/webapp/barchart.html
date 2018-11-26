@@ -1,0 +1,153 @@
+<html>
+<head>
+	<style>
+
+    .bar{
+        fill: steelblue;
+    }
+
+    .bar:hover{
+        fill: brown;
+    }
+
+	.axis {
+	  font: 10px sans-serif;
+	}
+
+    .amount {
+	  font: 48px sans-serif;
+      fill: #fff;
+      text-anchor: left;
+    }
+
+	.axis path,
+	.axis line {
+	  fill: none;
+	  stroke: #000;
+	  shape-rendering: crispEdges;
+	}
+
+	</style>
+</head>
+
+<body>
+	
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script>
+// set the dimensions of the canvas
+var margin = {top: 20, right: 20, bottom: 70, left: 40},
+    width = 640 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+
+// set the ranges
+var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
+
+var y = d3.scale.linear().range([height, 0]);
+
+// define the axis
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .ticks(10);
+
+// add the SVG element
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// add axis
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis)
+    .selectAll("text")
+    .style("text-anchor", "end")
+    .attr("dx", "-.8em")
+    .attr("dy", "-.55em")
+    .attr("transform", "rotate(-90)");
+
+svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 5)
+    .attr("dy", ".71em")
+    .style("text-anchor", "end");
+
+
+// load the data
+var redraw = function() {
+    d3.json("/sales", function(error, json) {
+
+    var data = json.bars;
+        
+    // scale the range of the data
+    x.domain([1, 2, 3, 4]);
+    var max = d3.max(data, function(d) { return d.sales; })
+    y.domain([0, max]);
+
+    svg.select(".x")
+        .transition()
+            .call(xAxis);
+
+    svg.select(".y")
+        .transition()
+            .call(yAxis);
+
+    // Add bar chart
+    var bars = svg.selectAll(".bar")
+        .data(data)
+
+    var amounts = svg.selectAll(".amount")
+        .data(data);
+        
+    bars.exit()
+        .remove();
+
+    amounts.exit()
+        .remove();
+
+    bars.transition()
+        .attr("y", function(d) { return y(d.sales); })
+        .attr("height", function(d) { return height - y(d.sales); });
+
+    amounts.transition()
+          .attr("y", function(d){ return y(d.sales) + 30; })
+          .text(function(d){ return d.sales; });
+        
+    bars.enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("x", function(d) { return x(d.bar); })
+        .attr("width", x.rangeBand())
+        .attr("y", function(d) { return y(d.sales); })
+        .attr("height", function(d) { return height - y(d.sales); });
+
+    amounts.enter()
+        .append("text")
+        .attr("class", "amount")
+        .attr("x", function(d){ return x(d.bar) + 10; })
+        .attr("y", function(d){ return y(d.sales) + 30; })
+        .attr("dy", 16)
+        .text(function(d){ return d.sales; });
+
+        setTimeout(redraw, 1000);
+    });
+}
+
+setTimeout(redraw, 1000);
+
+</script>
+
+</body>
+</html>
