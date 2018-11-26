@@ -16,6 +16,10 @@ libraryDependencies ++= {
     "org.apache.avro" % "avro" % "1.8.2",
     "io.confluent" % "kafka-avro-serializer" % "4.0.0",
     "javax.ws.rs" % "javax.ws.rs-api" % "2.1" artifacts (Artifact("javax.ws.rs-api", "jar", "jar")),
-    "org.apache.kafka" %% "kafka-streams-scala" % "2.0.1"
+    "org.apache.kafka" %% "kafka-streams-scala" % "2.0.1",
+    "org.scalatra" %% "scalatra" % "2.6.+",
+    "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106",
+    "org.eclipse.jetty" % "jetty-server" % "8.1.8.v20121106",
+    "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
   )
 }

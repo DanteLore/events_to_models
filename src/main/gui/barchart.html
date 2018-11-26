@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+body {
+  background-color: #F1F3F3    
+}
+.axis {
+	font: 15px sans-serif;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #D4D8DA;
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+.toolTip {
+  position: absolute;
+  display: none;
+  min-width: 80px;
+  height: auto;
+  background: none repeat scroll 0 0 #ffffff;
+  border: 1px solid #6F257F;
+  padding: 14px;
+  text-align: center;
+}
+</style>
+<svg width="960" height="500"></svg>
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="https://unpkg.com/d3-fetch"></script>
+
+<script>
+var svg = d3.select("svg"),
+    margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom;
+  
+var tooltip = d3.select("body").append("div").attr("class", "toolTip");
+
+var x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
+    y = d3.scaleLinear().rangeRound([height, 0]);
+  
+var colours = d3.scaleOrdinal()
+    .range(["#6F257F", "#CA0D59"]);
+
+var g = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+// Configure CORS on the Kafka system:
+// https://github.com/Tuong-Nguyen/Angular-D3-Cometd/wiki/Confluent-Kafka-REST-Proxy---CORS
+// Double check if this is needed for KSQL Server (probably is though, innit)
+
+// How to fetch some rows:
+// curl -X "POST" "http://192.168.56.101:8088/query" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" --data $'{"ksql": "SELECT * FROM JSON_TABLE LIMIT 4;","streamsProperties": {"ksql.streams.auto.offset.reset": "earliest"}}'
+
+
+var drawChart = function(data) {
+    alert("DRAW CHART")
+    /*
+    x.domain(data.map(function(d) { return d.area; }));
+    y.domain([0, d3.max(data, function(d) { return d.value; })]);
+
+    g.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+
+    g.append("g")
+        .attr("class", "axis axis--y")
+        .call(d3.axisLeft(y).ticks(5).tickFormat(function(d) { return parseInt(d / 1000) + "K"; }).tickSizeInner([-width]))
+    .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", "0.71em")
+        .attr("text-anchor", "end")
+        .attr("fill", "#5D6971")
+        .text("Average House Price - (£)");
+
+    g.selectAll(".bar")
+        .data(data)
+    .enter().append("rect")
+        .attr("x", function(d) { return x(d.area); })
+        .attr("y", function(d) { return y(d.value); })
+        .attr("width", x.bandwidth())
+        .attr("height", function(d) { return height - y(d.value); })
+        .attr("fill", function(d) { return colours(d.area); })
+        .on("mousemove", function(d){
+            tooltip
+            .style("left", d3.event.pageX - 50 + "px")
+            .style("top", d3.event.pageY - 70 + "px")
+            .style("display", "inline-block")
+            .html((d.area) + "<br>" + "£" + (d.value));
+        })
+            .on("mouseout", function(d){ tooltip.style("display", "none");});
+            */
+}
+
+var fetchData = d3.text("http://192.168.56.101:8088/query", { 
+        method:"POST",
+        body: JSON.stringify({
+            ksql: "SELECT * FROM BEER_TABLE WHERE NAME = 'Pub Beer' LIMIT 1;",
+            streamsProperties: {"ksql.streams.auto.offset.reset": "earliest"}
+            }),
+        headers: {
+            "Content-type": "application/vnd.ksql.v1+json; charset=utf-8"
+        }
+    });
+
+fetchData.then(lines => {
+    lines.split("\n").forEach(line => {
+            svg.append("text")
+                .text(lines)
+                .attr("y", 200)
+                .attr("x", 120)
+                .attr("font-size", 16)
+                .attr("font-family", "monospace")
+        });
+    }).catch(error => {
+        alert("NO" + error)
+    });
+
+</script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+package com.logicalgenetics.beer
+
 import java.lang.Double
 import java.time.Duration
 import java.util
