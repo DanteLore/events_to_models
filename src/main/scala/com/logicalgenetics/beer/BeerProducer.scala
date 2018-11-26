@@ -2,6 +2,7 @@ package com.logicalgenetics.beer
 
 import java.util.Properties
 
+import com.logicalgenetics.Config
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
@@ -35,7 +36,7 @@ object BeerProducer {
 
   lazy val producer : KafkaProducer[String, GenericRecord] = {
     val properties = new Properties()
-    properties.put("bootstrap.servers", "192.168.56.101:9092")
+    properties.put("bootstrap.servers", Config.servers)
     properties.put("schema.registry.url", "http://192.168.56.101:8081")
     properties.put("key.serializer", classOf[StringSerializer])
     properties.put("value.serializer", classOf[KafkaAvroSerializer])
