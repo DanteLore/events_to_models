@@ -16,7 +16,7 @@ import org.scalatra.json._
 import scala.collection.JavaConverters._
 
 
-class ReportServer extends ScalatraFilter with JacksonJsonSupport {
+class BeerServer extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
 
@@ -43,7 +43,7 @@ class ReportServer extends ScalatraFilter with JacksonJsonSupport {
       .toList
   }
 
-  get("/beers") {
+  get("/") {
     consumer.subscribe(util.Arrays.asList("beers"))
     consumer.poll(0) // get a partition assigned
     consumer.seekToBeginning(consumer.assignment())
