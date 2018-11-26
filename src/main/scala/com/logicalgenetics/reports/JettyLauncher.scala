@@ -15,7 +15,7 @@ object JettyLauncher {
     context.setResourceBase("src/main/webapp")
     context.setInitParameter(ScalatraListener.LifeCycleKey, "com.logicalgenetics.reports.ScalatraBootstrap")
     context.addEventListener(new ScalatraListener)
-    context.addServlet(classOf[DefaultServlet], "/")
+    context.addServlet(classOf[DefaultServlet], "/*")
 
     server.setHandler(context)
 

@@ -49,7 +49,7 @@ object SaleProducer {
 
   def createSale : GenericRecord = {
     val sale: GenericRecord = new GenericData.Record(schema)
-    sale.put("beer_id", beerIds(Random.nextInt(beerIds.size)).toInt)
+    sale.put("beer_id", beerIds(Random.nextInt(beerIds.length)).toInt)
     // There are 4 bars (i.e. 4 cash registers) - some more popular than others!
     sale.put("bar", Random.nextInt(10) match {
       case x if 0 to 3 contains x => 1
