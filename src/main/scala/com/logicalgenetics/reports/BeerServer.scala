@@ -14,6 +14,22 @@ import org.scalatra._
 import org.scalatra.json._
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+
+
+case class BeerRow(name : String, abv : String, sales : Int)
+
+
+object BeerCache {
+  lazy val beers : mutable.Map[String, BeerRow] = mutable.Map[String, BeerRow]()
+
+  def isEmpty : Boolean = beers.isEmpty
+
+  def update(bars: Seq[BeerRow]): Seq[BeerRow] = {
+    beers ++= bars.map(b => b.name -> b)
+    beers.values.toList
+  }
+}
 
 
 class BeerServer extends ScalatraServlet with JacksonJsonSupport {
@@ -37,31 +53,35 @@ class BeerServer extends ScalatraServlet with JacksonJsonSupport {
   }
 
   def fetchBeers: List[ConsumerRecord[String, GenericRecord]] = {
-    Iterator.continually(consumer.poll(Duration.ofSeconds(10)))
+    Iterator.continually(consumer.poll(Duration.ofSeconds(1)))
       .takeWhile(_.count() > 0)
       .flatMap(_.iterator().asScala)
       .toList
   }
 
   get("/") {
-    consumer.subscribe(util.Arrays.asList("beers"))
-    consumer.poll(0) // get a partition assigned
-    consumer.seekToBeginning(consumer.assignment())
+    consumer.subscribe(util.Arrays.asList("beer_league_table"))
 
-    val beers = fetchBeers
+    if(BeerCache.isEmpty) {
+      consumer.poll(0) // get a partition assigned
+      consumer.seekToBeginning(consumer.assignment())
+    }
+
+    val updates = fetchBeers
       .map(record => record.value())
       .map { beer =>
-        Map(
-          "name" -> beer.get("name").toString,
-          "abv" -> {
-            beer.get("abv") match {
-              case null => "unknown"
-              case x: Double => s"${x * 100}%"
-            }
-          }
+        BeerRow(
+          beer.get("NAME").toString,
+          beer.get("ABV") match {
+            case null => "unknown"
+            case x: Double => f"${x * 100}%.1f"
+          },
+          beer.get("SALES").toString.toInt // !
         )
       }
 
-    Map("count" -> beers.length, "beers" -> beers)
+    val beers = BeerCache.update(updates)
+
+    Map("count" -> beers.length, "processed" -> updates.length, "beers" -> beers)
   }
 }
