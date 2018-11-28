@@ -273,3 +273,100 @@ ksql> select id, name, abv from beer_table where abv > 0.1;
 ```
 
 So the table has magically squashed the event data down into current state data!  Very exciting.
+
+
+# Setting up Kafka Connect
+
+Here are the details on setting up *SpoolDir* the Kafka Connect source for CSV and JSON.  This is quite an involved process.  [See this article for details](https://www.confluent.io/blog/ksql-in-action-enriching-csv-events-with-data-from-rdbms-into-AWS/) though a few of the steps in th article needed some tweaking before I could make them work.
+
+First, download and compile the sources.  I couldn't make the unit tests work. Googling led me to just disable them!
+
+```
+$ sudo apt install git mvn
+
+$ git clone https://github.com/jcustenborder/kafka-connect-spooldir.git
+$ cd kafka-connect-spooldir
+$ mvn clean package -DskipTests
+$ cd ..
+
+$ cp -Rvf kafka-connect-spooldir/target confluent-5.0.1/share/java/kafka-connect-spooldir
+
+$ confluent-5.0.1/bin/confluent stop
+$ confluent-5.0.1/bin/confluent start
+```
+
+You can check that this worked by going to the control centre (http://localhost:9021), clicking `Management --> Kafka Connect --> Sources --> Add New` and you should see the SpoolDir sources listed in the `Connector Class` box.
+
+Next, create this directory structure somewhere (I used my home dir).  SpoolDir will pick up new files from source, process them and move them to either finished or error.
+
+```
+$ find csv/
+csv/
+csv/finished
+csv/error
+csv/source
+```
+
+Next step is to create a schema, create a temporary config file, pointing at the directories you just created:
+
+`~/spool-conf.tmp`:
+```
+input.path=/home/dan/csv/source
+finished.path=/home/dan/csv/finished
+error.path=/home/dan/csv/error
+csv.first.row.as.header=true
+```
+
+And the schema creation tool - this will pipe the config to a file ~/spooldir.config.
+
+```
+$ ~/confluent-5.0.1/bin/kafka-run-class com.github.jcustenborder.kafka.connect.spooldir.SchemaGenerator -t csv -f ~/csv/source/breweries.csv -c ~/spool-conf.tmp -i row | sed 's/\\:/:/g'|sed 's/\"/\\\"/g' > ~/spooldir.config
+```
+
+This creates a schema, but not quite in JSON format.  You need to hack it to look like the following (note that this file is included in this repo [spooldir.config](kafka-connect/spooldir.config).
+
+```
+{
+"name": "csv-source-breweries",
+"config": {
+    "value.schema": "{\"name\":\"com.github.jcustenborder.kafka.connect.model.Value\",\"type\":\"STRUCT\",\"isOptional\":false,\"fieldSchemas\":{\"row\":{\"type\":\"INT64\",\"isOptional\":false},\"name\":{\"type\":\"STRING\",\"isOptional\":false},\"city\":{\"type\":\"STRING\",\"isOptional\":true},\"state\":{\"type\":\"STRING\",\"isOptional\":true}}}",
+    "error.path": "/home/dan/csv/error",
+    "input.path": "/home/dan/csv/source",
+    "key.schema": "{\"name\":\"com.github.jcustenborder.kafka.connect.model.Key\",\"type\":\"STRUCT\",\"isOptional\":false,\"fieldSchemas\":{\"row\":{\"type\":\"INT64\",\"isOptional\":false}}}",
+    "finished.path": "/home/dan/csv/finished",
+    "halt.on.error": "false",
+    "topic": "breweries",
+    "tasks.max": "1",
+    "connector.class": "com.github.jcustenborder.kafka.connect.spooldir.SpoolDirCsvSourceConnector",
+    "input.file.pattern": "^.*.csv$",
+    "csv.first.row.as.header": true
+  }
+}
+```
+
+Post the config file to create the Kafka Connect Source:
+
+```
+curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8083/connectors/ --data "@spooldir.config"
+```
+
+You can check if this is running by going to http://localhost:9021/management/connect/ where it should appear in the list with status `Running`.
+
+Finally, move some data into the `source` directory and it should be processed immediately and moved to the `finished` folder:
+
+```
+$ cp data/breweries.csv ~/csv/source
+
+$ find csv/
+csv/
+csv/finished
+csv/finished/breweries.csv
+csv/error
+csv/source
+```
+
+If this doesn't work, you can run this command to see the Kafka Connect logs, where any error messages are recorded:
+
+```
+$ confluent-5.0.1/bin/confluent log connect
+```
