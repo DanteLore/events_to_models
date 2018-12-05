@@ -1,7 +1,7 @@
 package com.logicalgenetics
 
 object Config {
-  val schemaRegistry: String = "http://192.168.56.101:8081"
+  val schemaRegistry: String = "http://localhost:8081"
 
-  val servers: String = "192.168.56.101:9092"
+  val servers: String = "localhost:9092"
 }

@@ -15,7 +15,7 @@ libraryDependencies ++= {
     "org.slf4j" % "slf4j-api" % "1.7.1",
     "org.apache.avro" % "avro" % "1.8.2",
     "io.confluent" % "kafka-avro-serializer" % "4.0.0",
-    "javax.ws.rs" % "javax.ws.rs-api" % "2.1" artifacts (Artifact("javax.ws.rs-api", "jar", "jar")),
+    "javax.ws.rs" % "javax.ws.rs-api" % "2.1" artifacts Artifact("javax.ws.rs-api", "jar", "jar"),
     "org.apache.kafka" %% "kafka-streams-scala" % "2.0.1",
     "org.scalatra" %% "scalatra" % "2.6.+",
     "org.eclipse.jetty" % "jetty-webapp" % "8.1.8.v20121106",

@@ -37,7 +37,7 @@ object BeerProducer {
   lazy val producer : KafkaProducer[String, GenericRecord] = {
     val properties = new Properties()
     properties.put("bootstrap.servers", Config.servers)
-    properties.put("schema.registry.url", "http://192.168.56.101:8081")
+    properties.put("schema.registry.url", Config.schemaRegistry)
     properties.put("key.serializer", classOf[StringSerializer])
     properties.put("value.serializer", classOf[KafkaAvroSerializer])
 
