@@ -14,7 +14,7 @@ import org.apache.kafka.streams.scala.kstream.KStream
 import org.apache.kafka.streams.scala.{Serdes, StreamsBuilder}
 import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
 
-object BreweryCsvProcessorStream extends App {
+object BreweryCsvProcessorStream {
 
   lazy val schema: Schema = new Schema.Parser().parse("""
     {
@@ -37,23 +37,6 @@ object BreweryCsvProcessorStream extends App {
     p
   }
 
-  private def process(inputKey : String, inputValue: String) : Option[(String, GenericRecord)] = {
-    val splits = inputValue.split(',').map(_.trim).map(_.toUpperCase)
-
-    splits match {
-      case Array(row, name, city, state) =>
-        val breweryRecord: GenericRecord = new GenericData.Record(schema)
-        breweryRecord.put("id", row)
-        breweryRecord.put("name", name)
-        breweryRecord.put("city", city)
-        breweryRecord.put("state", state)
-
-        Some((row, breweryRecord))
-
-      case _ => None
-    }
-  }
-
   val stringSerde: Serde[String] = Serdes.String
   val genericAvroSerde: Serde[GenericRecord] = {
     val gas = new GenericAvroSerde
@@ -63,19 +46,50 @@ object BreweryCsvProcessorStream extends App {
   implicit val produced: Produced[String, GenericRecord] = Produced.`with`(stringSerde, genericAvroSerde)
   implicit val consumed: Consumed[String, String] = Consumed.`with`(stringSerde, stringSerde)
 
+  private def process(inputKey : String, inputValue: String) : Option[(String, GenericRecord)] = {
 
-  val builder = new StreamsBuilder()
-  val textLines: KStream[String, String] = builder.stream[String, String]("raw-brewery-text")
-  val records: KStream[String, GenericRecord] = textLines.flatMap((k, v) => process(k, v))
-  records.to("brewery-rows-good")
+    inputValue.split(',').map(_.trim) match {
+      // Skip the header row
+      case Array("row", "name", "city", "state") => None
 
-  val streams: KafkaStreams = new KafkaStreams(builder.build(), config)
-  streams.cleanUp()
+      // Any of the columns are empty
+      case arr : Array[String] if arr.contains("") => None
 
-  streams.start()
+      // row num is non-numeric
+      case Array(row, _, _, _) if row.exists(!_.isDigit)  => None
 
-  // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
-  sys.ShutdownHookThread {
-    streams.close(10, TimeUnit.SECONDS)
+      // State is an invalid length
+      case Array(_, _, _, state) if state.length != 2 => None
+
+      // Healthy row
+      case Array(row, name, city, state) =>
+        val breweryRecord: GenericRecord = new GenericData.Record(schema)
+        breweryRecord.put("id", row)
+        breweryRecord.put("name", name)
+        breweryRecord.put("city", city)
+        breweryRecord.put("state", state)
+
+        Some((row, breweryRecord))
+
+      // Otherwise bad row (wrong number of cols etc)
+      case _ => None
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+    val builder = new StreamsBuilder()
+    val textLines: KStream[String, String] = builder.stream[String, String]("raw-brewery-text")
+    val records: KStream[String, GenericRecord] = textLines.flatMap((k, v) => process(k, v))
+    records.to("brewery-rows-good")
+
+    val streams: KafkaStreams = new KafkaStreams(builder.build(), config)
+    streams.cleanUp()
+
+    streams.start()
+
+    // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
+    sys.ShutdownHookThread {
+      streams.close(10, TimeUnit.SECONDS)
+    }
   }
 }
