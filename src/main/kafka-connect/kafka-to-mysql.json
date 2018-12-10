@@ -1,0 +1,13 @@
+{
+  "name": "jdbc_sink_mysql_beers_01",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+    "tasks.max": "1",
+    "topics": "beer_stream_with_key",
+    "connection.url": "jdbc:mysql://localhost:3306/beerfest?user=dant&password=password",
+    "auto.create": "true",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://localhost:8081"
+  }
+}
