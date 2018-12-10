@@ -43,25 +43,36 @@ object BreweryCsvProcessorStream {
     gas.configure(Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, Config.schemaRegistry), false)
     gas
   }
-  implicit val produced: Produced[String, GenericRecord] = Produced.`with`(stringSerde, genericAvroSerde)
   implicit val consumed: Consumed[String, String] = Consumed.`with`(stringSerde, stringSerde)
+  implicit val producedGood: Produced[String, GenericRecord] = Produced.`with`(stringSerde, genericAvroSerde)
+  implicit val producedBad: Produced[String, String] = Produced.`with`(stringSerde, stringSerde)
 
-  private def process(inputKey : String, inputValue: String) : Option[(String, GenericRecord)] = {
+  private def validate(inputValue: String) : Boolean = {
 
     inputValue.split(',').map(_.trim) match {
       // Skip the header row
-      case Array("row", "name", "city", "state") => None
+      case Array("row", "name", "city", "state") => false
 
       // Any of the columns are empty
-      case arr : Array[String] if arr.contains("") => None
+      case arr : Array[String] if arr.contains("") => false
 
       // row num is non-numeric
-      case Array(row, _, _, _) if row.exists(!_.isDigit)  => None
+      case Array(row, _, _, _) if row.exists(!_.isDigit)  => false
 
       // State is an invalid length
-      case Array(_, _, _, state) if state.length != 2 => None
+      case Array(_, _, _, state) if state.length != 2 => false
 
       // Healthy row
+      case Array(row, name, city, state) => true
+
+      // Otherwise bad row (wrong number of cols etc)
+      case _ => false
+    }
+  }
+
+  private def toAvro(inputValue: String) : Option[(String, GenericRecord)] = {
+
+    inputValue.split(',').map(_.trim) match {
       case Array(row, name, city, state) =>
         val breweryRecord: GenericRecord = new GenericData.Record(schema)
         breweryRecord.put("id", row)
@@ -71,20 +82,28 @@ object BreweryCsvProcessorStream {
 
         Some((row, breweryRecord))
 
-      // Otherwise bad row (wrong number of cols etc)
       case _ => None
     }
   }
 
+
+
   def main(args: Array[String]): Unit = {
     val builder = new StreamsBuilder()
-    val textLines: KStream[String, String] = builder.stream[String, String]("raw-brewery-text")
-    val records: KStream[String, GenericRecord] = textLines.flatMap((k, v) => process(k, v))
-    records.to("brewery-rows-good")
+    val textLines: KStream[String, String] = builder.stream[String, String]("raw_brewery_text")
 
+    val Array(good, bad) = textLines.branch(
+      (_, v) => validate(v),
+      (_, _) => true
+    )
+
+    good.flatMap((_, v) => toAvro(v)).to("brewery_rows_good")
+
+    bad.to("brewery_rows_bad")
+
+    // Start the streams
     val streams: KafkaStreams = new KafkaStreams(builder.build(), config)
     streams.cleanUp()
-
     streams.start()
 
     // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
