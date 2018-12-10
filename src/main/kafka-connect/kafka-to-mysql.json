@@ -6,6 +6,9 @@
     "topics": "beer_stream_with_key",
     "connection.url": "jdbc:mysql://localhost:3306/beerfest?user=dant&password=password",
     "auto.create": "true",
+    "pk.mode": "record_value",
+    "pk.fields": "ROW",
+    "insert.mode": "upsert",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "io.confluent.connect.avro.AvroConverter",
     "value.converter.schema.registry.url": "http://localhost:8081"
