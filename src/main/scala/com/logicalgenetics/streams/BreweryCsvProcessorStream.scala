@@ -89,16 +89,20 @@ object BreweryCsvProcessorStream {
 
 
   def main(args: Array[String]): Unit = {
+    // Get the lines
     val builder = new StreamsBuilder()
     val textLines: KStream[String, String] = builder.stream[String, String]("raw_brewery_text")
 
+    // Validate and branch
     val Array(good, bad) = textLines.branch(
       (_, v) => validate(v),
       (_, _) => true
     )
 
+    // Send the good rows to the good topic
     good.flatMap((_, v) => toAvro(v)).to("brewery_rows_good")
 
+    // ...and the bad to the bad
     bad.to("brewery_rows_bad")
 
     // Start the streams
