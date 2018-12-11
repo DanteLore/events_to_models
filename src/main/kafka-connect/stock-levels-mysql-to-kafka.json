@@ -1,5 +1,5 @@
 {
-  "name": "jdbc_source_mysql_foobar_01",
+  "name": "jdbc_source_mysql_stock_levels",
   "config": {
     "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
     "key.converter": "io.confluent.connect.avro.AvroConverter",
@@ -7,7 +7,7 @@
     "value.converter": "io.confluent.connect.avro.AvroConverter",
     "value.converter.schema.registry.url": "http://localhost:8081",
     "connection.url": "jdbc:mysql://localhost:3306/beerfest?user=dant&password=password",
-    "table.whitelist": "foobar",
+    "table.whitelist": "stock_levels",
     "mode": "timestamp",
     "timestamp.column.name": "update_ts",
     "validate.non.null": "false",

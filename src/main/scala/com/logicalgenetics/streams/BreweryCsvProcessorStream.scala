@@ -18,7 +18,7 @@ object BreweryCsvProcessorStream {
 
   lazy val schema: Schema = new Schema.Parser().parse("""
     {
-      "namespace": "logicalgenetics.brewery",
+      "namespace": "logicalgenetics.breweries",
       "type": "record",
       "name": "brewery",
 
@@ -100,7 +100,7 @@ object BreweryCsvProcessorStream {
     )
 
     // Send the good rows to the good topic
-    good.flatMap((_, v) => toAvro(v)).to("brewery_rows_good")
+    good.flatMap((_, v) => toAvro(v)).to("breweries")
 
     // ...and the bad to the bad
     bad.to("brewery_rows_bad")

@@ -20,3 +20,11 @@ create stream live_beer_sales with (kafka_topic='live_beer_sales', value_format=
 
 create table beer_league_table with (kafka_topic='beer_league_table', value_format='avro') as select name, abv, sum(price) as sales from live_beer_sales group by name, abv;
 
+create stream brewery_stream with (kafka_topic='breweries', value_format='avro');
+
+create stream brewery_stream_with_key with (kafka_topic='brewery_stream_with_key', value_format='avro') as select id, name, state, city from brewery_stream partition by id;
+
+create table brewery_table with (kafka_topic='brewery_stream_with_key', value_format='avro', key='id');
+
+create stream outgoing_sales with (kafka_topic='outgoing_sales', value_format='avro') as select beer_id, bar, price, rowtime as ts from live_sales;
+
