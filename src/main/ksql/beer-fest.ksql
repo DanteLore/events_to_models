@@ -9,7 +9,7 @@ create stream beer_stream_with_key with (kafka_topic='beer_stream_with_key', val
 
 # Need to do a query here to allow the table to be created.  Not sure why...
 SET 'auto.offset.reset' = 'earliest';
-select * from beer_stream_with_key limit 5;
+select * from beer_stream_with_key limit 1;
 
 create table beer_table with (kafka_topic='beer_stream_with_key', value_format='avro', key='id');
 
@@ -19,7 +19,7 @@ create table takings_by_bar with (kafka_topic='takings_by_bar', value_format='av
 
 create table takings_by_bar_last_min with (kafka_topic='takings_by_bar_last_min', value_format='avro', partitions=1) \ as select bar, sum(price) as sales from live_sales window tumbling (size 1 minute) group by bar;
 
-create stream live_beer_sales with (kafka_topic='live_beer_sales', value_format='avro') as select bar, price, name, abv from live_sales LS join beer_table BT on (LS.beer_id = BT.id);
+create stream live_beer_sales with (kafka_topic='live_beer_sales', value_format='avro') as select bar, price, name, abv, brewery_id from live_sales LS join beer_table BT on (LS.beer_id = BT.id);
 
 create table beer_league_table with (kafka_topic='beer_league_table', value_format='avro') as select name, abv, sum(price) as sales from live_beer_sales group by name, abv;
 
@@ -30,9 +30,20 @@ $ kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text <
 
 create stream brewery_stream with (kafka_topic='breweries', value_format='avro');
 
-create stream brewery_stream_with_key with (kafka_topic='brewery_stream_with_key', value_format='avro') as select id, name, state, city from brewery_stream partition by id;
+create stream brewery_stream_with_key with (kafka_topic='brewery_stream_with_key', value_format='avro', partitions=1) as select id, name, state, city from brewery_stream partition by id;
 
 create table brewery_table with (kafka_topic='brewery_stream_with_key', value_format='avro', key='id');
 
 create stream outgoing_sales with (kafka_topic='outgoing_sales', value_format='avro') as select beer_id, bar, price, rowtime as ts from live_sales;
 
+create stream live_beer_sales_stringified with (kafka_topic='live_beer_sales_stringified', value_format='avro', partitions=1) as select bar, price, name, abv, cast(brewery_id as VARCHAR) as brewery_id from live_beer_sales;
+
+create stream live_beer_brewery_sales with (kafka_topic='live_beer_brewery_sales', value_format='avro', partitions=1) as select bar, price, bs.name, abv, br.id as brewery_id, br.name as brewery_name, city, state from live_beer_sales_stringified bs join brewery_table br on (bs.brewery_id = br.id);
+
+create table brewery_league_data with (kafka_topic='brewery_league_data', value_format='avro', partition_by='brewery_id', partitions=1) as select brewery_id, sum(price) as sales from live_beer_brewery_sales group by brewery_id;
+
+create table brewery_league_table with (kafka_topic='brewery_league_table', value_format='avro', partition_by='brewery_id', partitions=1) as select b.id, b.name, b.city, b.state, lt.sales from brewery_league_data lt join brewery_table b on (lt.rowkey = b.id);
+
+# Launch The JettyLauncher
+
+# Goto http://localhost:8899

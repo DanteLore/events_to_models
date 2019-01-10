@@ -1,6 +1,5 @@
 package com.logicalgenetics.reports
 
-import java.lang.Double
 import java.time.Duration
 import java.util
 
@@ -17,7 +16,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 
-case class BreweryRow(name : String, city : String, state : String, sales : Int)
+case class BreweryRow(id : String, name : String, city : String, state : String, sales : Int)
 
 
 object BreweryCache {
@@ -26,7 +25,7 @@ object BreweryCache {
   def isEmpty : Boolean = breweries.isEmpty
 
   def update(items: Seq[BreweryRow]): Seq[BreweryRow] = {
-    breweries ++= items.map(b => b.name -> b)
+    breweries ++= items.map(b => b.id -> b)
     breweries.values.toList
   }
 }
@@ -69,12 +68,13 @@ class BreweryServer extends ScalatraServlet with JacksonJsonSupport {
 
     val updates = fetchBreweries
       .map(record => record.value())
-      .map { beer =>
+      .map { brew =>
         BreweryRow(
-          beer.get("BREWERY").toString,
-          beer.get("CITY").toString,
-          beer.get("STATE").toString,
-          beer.get("SALES").toString.toInt
+          brew.get("ID").toString,
+          brew.get("NAME").toString,
+          brew.get("CITY").toString,
+          brew.get("STATE").toString,
+          brew.get("SALES").toString.toInt
         )
       }
 
