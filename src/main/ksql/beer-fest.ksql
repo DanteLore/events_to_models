@@ -1,3 +1,6 @@
+# Start the SalesProducer
+# Start the BeerProducer
+
 create stream sales_stream with (kafka_topic='sales', value_format='avro');
 
 create stream raw_beer_stream with (kafka_topic='beers', value_format='avro');
@@ -19,6 +22,11 @@ create table takings_by_bar_last_min with (kafka_topic='takings_by_bar_last_min'
 create stream live_beer_sales with (kafka_topic='live_beer_sales', value_format='avro') as select bar, price, name, abv from live_sales LS join beer_table BT on (LS.beer_id = BT.id);
 
 create table beer_league_table with (kafka_topic='beer_league_table', value_format='avro') as select name, abv, sum(price) as sales from live_beer_sales group by name, abv;
+
+# At this stage load some brewery data!
+$ kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text < breweries.csv
+
+# Then run the BreweryCsvProcessor
 
 create stream brewery_stream with (kafka_topic='breweries', value_format='avro');
 
