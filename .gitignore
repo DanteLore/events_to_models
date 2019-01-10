@@ -21,5 +21,6 @@ project/plugins/project/
 # IntelliJ
 
 .idea/
+.DS_Store
 
 data/*.csv
