@@ -17,7 +17,7 @@ create stream live_sales with (kafka_topic='live_sales', value_format='avro', pa
 
 create table takings_by_bar with (kafka_topic='takings_by_bar', value_format='avro') as select bar, sum(price) as sales from live_sales group by bar;
 
-create table takings_by_bar_last_min with (kafka_topic='takings_by_bar_last_min', value_format='avro', partitions=1) \ as select bar, sum(price) as sales from live_sales window tumbling (size 1 minute) group by bar;
+create table takings_by_bar_last_min with (kafka_topic='takings_by_bar_last_min', value_format='avro', partitions=1) as select bar, sum(price) as sales from live_sales window tumbling (size 1 minute) group by bar;
 
 create stream live_beer_sales with (kafka_topic='live_beer_sales', value_format='avro') as select bar, price, name, abv, brewery_id from live_sales LS join beer_table BT on (LS.beer_id = BT.id);
 
