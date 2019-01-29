@@ -17,11 +17,27 @@ object Setup {
     System.in.read
   }
 
-  private def handleCommand(cmd: String) : Unit = {
-    val thing = cmd.substring(1).trim.replace("~", home)
+  private def handleCommand(cmd: String) : Unit = cmd
+    .replaceFirst("\\$", "")
+    .trim
+    .replace("~", home) match {
+    case c if c.contains('|') => handlePipedCommand(c)
+    case c => handleBasicCommand(c)
+  }
+
+  private def handlePipedCommand(cmd: String) : Unit = {
+    val Array(a, b) = cmd.split('|').map(_.trim).filterNot(_.isEmpty)
+
+    val result = (a #| b).!!.trim
+
+    println(result)
+  }
+
+  private def handleBasicCommand(cmd: String) : Unit = {
+    val thing = cmd
     println(thing)
 
-    val result = thing.split(' ').toList.!!
+    val result = thing.split("\\s").toList.!!
     println(result)
   }
 

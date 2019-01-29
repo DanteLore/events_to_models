@@ -1,3 +1,4 @@
+
 # Start the SalesProducer
 # Start the BeerProducer
 
@@ -21,7 +22,7 @@ create stream live_beer_sales with (kafka_topic='live_beer_sales', value_format=
 
 create table beer_league_table with (kafka_topic='beer_league_table', value_format='avro') as select name, abv, sum(price) as sales from live_beer_sales group by name, abv;
 
-$ ~/confluent-5.1.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text < data/breweries.csv
+$ cat data/breweries.csv | ~/confluent-5.1.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text
 
 # Run the BreweryCsvProcessor
 
@@ -45,4 +46,4 @@ create table brewery_league_table with (kafka_topic='brewery_league_table', valu
 
 # Launch The JettyLauncher
 
-# Goto http://localhost:8899
+$ open http://localhost:8899/brewery-league.html
