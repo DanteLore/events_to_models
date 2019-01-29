@@ -7,9 +7,7 @@ create stream raw_beer_stream with (kafka_topic='beers', value_format='avro');
 
 create stream beer_stream_with_key with (kafka_topic='beer_stream_with_key', value_format='avro') as select CAST(id as string) as id, row, abv, ibu, name, style, brewery_id, ounces from raw_beer_stream partition by id;
 
-# Need to do a query here to allow the table to be created.  Not sure why...
-SET 'auto.offset.reset' = 'earliest';
-select * from beer_stream_with_key limit 1;
+select * from beer_stream_with_key limit 1
 
 create table beer_table with (kafka_topic='beer_stream_with_key', value_format='avro', key='id');
 
@@ -23,14 +21,15 @@ create stream live_beer_sales with (kafka_topic='live_beer_sales', value_format=
 
 create table beer_league_table with (kafka_topic='beer_league_table', value_format='avro') as select name, abv, sum(price) as sales from live_beer_sales group by name, abv;
 
-# At this stage load some brewery data!
-$ kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text < breweries.csv
+$ ~/confluent-5.1.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text < data/breweries.csv
 
-# Then run the BreweryCsvProcessor
+# Run the BreweryCsvProcessor
 
 create stream brewery_stream with (kafka_topic='breweries', value_format='avro');
 
 create stream brewery_stream_with_key with (kafka_topic='brewery_stream_with_key', value_format='avro', partitions=1) as select id, name, state, city from brewery_stream partition by id;
+
+select * from brewery_stream_with_key limit 1
 
 create table brewery_table with (kafka_topic='brewery_stream_with_key', value_format='avro', key='id');
 

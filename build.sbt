@@ -23,6 +23,7 @@ libraryDependencies ++= {
     "org.eclipse.jetty" % "jetty-server" % "8.1.8.v20121106",
     "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",
     "org.scalatra" %% "scalatra-json" % "2.6.+",
-    "org.json4s"   %% "json4s-jackson" % "3.5.2"
+    "org.json4s"   %% "json4s-jackson" % "3.5.2",
+    "com.softwaremill.sttp" %% "core" % "1.5.8"
   )
 }
