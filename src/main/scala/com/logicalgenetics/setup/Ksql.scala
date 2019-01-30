@@ -4,7 +4,7 @@ import com.softwaremill.sttp._
 case class KsqlResponse(code : Int, body : String)
 
 object Ksql {
-  def query(ksql: String): Unit = {
+  def query(ksql: String): KsqlResponse = {
 
     val message = s"""{
                       "ksql": "${clean(ksql)}",

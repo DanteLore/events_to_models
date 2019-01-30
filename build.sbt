@@ -8,6 +8,7 @@ resolvers += "confluent" at "https://packages.confluent.io/maven/"
 
 libraryDependencies ++= {
   Seq(
+    "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     "org.apache.kafka" %% "kafka" % "2.0.0",
     "org.apache.kafka" % "kafka-clients" % "0.10.0.0",
     "ch.qos.logback" % "logback-classic" % "1.0.3",

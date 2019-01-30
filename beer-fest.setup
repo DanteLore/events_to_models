@@ -1,6 +1,7 @@
 
-# Start the SalesProducer
-# Start the BeerProducer
+! com.logicalgenetics.beer.SaleProducer.main(Array.empty[String])
+
+! com.logicalgenetics.beer.BeerProducer.main(Array.empty[String])
 
 create stream sales_stream with (kafka_topic='sales', value_format='avro');
 
@@ -8,6 +9,7 @@ create stream raw_beer_stream with (kafka_topic='beers', value_format='avro');
 
 create stream beer_stream_with_key with (kafka_topic='beer_stream_with_key', value_format='avro') as select CAST(id as string) as id, row, abv, ibu, name, style, brewery_id, ounces from raw_beer_stream partition by id;
 
+! com.logicalgenetics.beer.BeerProducer.main(Array.empty[String])
 select * from beer_stream_with_key limit 1
 
 create table beer_table with (kafka_topic='beer_stream_with_key', value_format='avro', key='id');
@@ -24,11 +26,13 @@ create table beer_league_table with (kafka_topic='beer_league_table', value_form
 
 $ cat data/breweries.csv | ~/confluent-5.1.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text
 
-# Run the BreweryCsvProcessor
+! com.logicalgenetics.streams.BreweryCsvProcessorStream.main(Array.empty[String])
 
 create stream brewery_stream with (kafka_topic='breweries', value_format='avro');
 
 create stream brewery_stream_with_key with (kafka_topic='brewery_stream_with_key', value_format='avro', partitions=1) as select id, name, state, city from brewery_stream partition by id;
+
+$ cat data/breweries.csv | ~/confluent-5.1.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text
 
 select * from brewery_stream_with_key limit 1
 
@@ -44,6 +48,6 @@ create table brewery_league_data with (kafka_topic='brewery_league_data', value_
 
 create table brewery_league_table with (kafka_topic='brewery_league_table', value_format='avro', partition_by='brewery_id', partitions=1) as select b.id, b.name, b.city, b.state, lt.sales from brewery_league_data lt join brewery_table b on (lt.rowkey = b.id);
 
-# Launch The JettyLauncher
+! com.logicalgenetics.reports.JettyLauncher.main(Array.empty[String])
 
 $ open http://localhost:8899/brewery-league.html
