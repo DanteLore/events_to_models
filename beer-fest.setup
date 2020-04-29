@@ -3,18 +3,20 @@
 
 ! com.logicalgenetics.beer.BeerProducer.main(Array.empty[String])
 
-create stream sales_stream with (kafka_topic='sales', value_format='avro');
+create stream raw_sales_stream with (kafka_topic='sales', value_format='avro');
+
+create stream sales_stream with (kafka_topic='sales_stream', value_format='avro') as select CAST(beer_id as int) as beer_id, bar, price from raw_sales_stream partition by beer_id;
 
 create stream raw_beer_stream with (kafka_topic='beers', value_format='avro');
 
-create stream beer_stream_with_key with (kafka_topic='beer_stream_with_key', value_format='avro') as select CAST(id as string) as id, row, abv, ibu, name, style, brewery_id, ounces from raw_beer_stream partition by id;
+create stream beer_stream_with_key with (kafka_topic='beer_stream_with_key', value_format='avro') as select CAST(id as int) as id, row, abv, ibu, name, style, brewery_id, ounces from raw_beer_stream partition by id;
 
 ! com.logicalgenetics.beer.BeerProducer.main(Array.empty[String])
-select * from beer_stream_with_key limit 1
+select * from beer_stream_with_key emit changes limit 1
 
-create table beer_table with (kafka_topic='beer_stream_with_key', value_format='avro', key='id');
+create table beer_table (rowkey integer key, id integer, row integer, abv double, ibu double, name string, style string, brewery_id integer, ounces double) with (kafka_topic='beer_stream_with_key', value_format='avro', key='id');
 
-create stream live_sales with (kafka_topic='live_sales', value_format='avro', partitions=4) as select * from sales_stream;
+create stream live_sales with (kafka_topic='live_sales', value_format='avro') as select * from sales_stream partition by beer_id;
 
 create table takings_by_bar with (kafka_topic='takings_by_bar', value_format='avro') as select bar, sum(price) as sales from live_sales group by bar;
 
@@ -24,7 +26,7 @@ create stream live_beer_sales with (kafka_topic='live_beer_sales', value_format=
 
 create table beer_league_table with (kafka_topic='beer_league_table', value_format='avro') as select name, abv, sum(price) as sales from live_beer_sales group by name, abv;
 
-$ cat data/breweries.csv | ~/confluent-5.1.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text
+$ cat data/breweries.csv | ~/confluent-5.5.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text
 
 ! com.logicalgenetics.streams.BreweryCsvProcessorStream.main(Array.empty[String])
 
@@ -32,9 +34,9 @@ create stream brewery_stream with (kafka_topic='breweries', value_format='avro')
 
 create stream brewery_stream_with_key with (kafka_topic='brewery_stream_with_key', value_format='avro', partitions=1) as select id, name, state, city from brewery_stream partition by id;
 
-$ cat data/breweries.csv | ~/confluent-5.1.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text
+$ cat data/breweries.csv | ~/confluent-5.5.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text
 
-select * from brewery_stream_with_key limit 1
+select * from brewery_stream_with_key emit changes limit 1
 
 create table brewery_table with (kafka_topic='brewery_stream_with_key', value_format='avro', key='id');
 
@@ -44,9 +46,9 @@ create stream live_beer_sales_stringified with (kafka_topic='live_beer_sales_str
 
 create stream live_beer_brewery_sales with (kafka_topic='live_beer_brewery_sales', value_format='avro', partitions=1) as select bar, price, bs.name, abv, br.id as brewery_id, br.name as brewery_name, city, state from live_beer_sales_stringified bs join brewery_table br on (bs.brewery_id = br.id);
 
-create table brewery_league_data with (kafka_topic='brewery_league_data', value_format='avro', partition_by='brewery_id', partitions=1) as select brewery_id, sum(price) as sales from live_beer_brewery_sales group by brewery_id;
+create table brewery_league_data with (kafka_topic='brewery_league_data', value_format='avro') as select brewery_id, sum(price) as sales from live_beer_brewery_sales group by brewery_id;
 
-create table brewery_league_table with (kafka_topic='brewery_league_table', value_format='avro', partition_by='brewery_id', partitions=1) as select b.id, b.name, b.city, b.state, lt.sales from brewery_league_data lt join brewery_table b on (lt.rowkey = b.id);
+create table brewery_league_table with (kafka_topic='brewery_league_table', value_format='avro') as select b.id, b.name, b.city, b.state, lt.sales from brewery_league_data lt join brewery_table b on (lt.rowkey = b.id);
 
 ! com.logicalgenetics.reports.JettyLauncher.main(Array.empty[String])
 

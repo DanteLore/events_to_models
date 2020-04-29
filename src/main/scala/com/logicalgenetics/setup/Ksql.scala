@@ -14,14 +14,15 @@ object Ksql {
                     }"""
 
     val request = sttp
-      .header("Content-Type", "application/vnd.ksql.v1+json")
+      .header("Accept", "application/json")
+      .header("Content-Type", "application/json")
       .header("charset", "utf-8")
       .body(message)
       .post(uri"http://localhost:8088/query")
 
     val response = request.send()
 
-    KsqlResponse(response.code, "")
+    KsqlResponse(response.code, response.body match { case Left(x) => x case _ => "SUCCESS" } )
   }
 
   implicit val backend: SttpBackend[Id, Nothing] = HttpURLConnectionBackend()
@@ -33,14 +34,15 @@ object Ksql {
                     }"""
 
     val request = sttp
-      .header("Content-Type", "application/vnd.ksql.v1+json")
+      .header("Accept", "application/json")
+      .header("Content-Type", "application/json")
       .header("charset", "utf-8")
       .body(message)
       .post(uri"http://localhost:8088/ksql")
 
     val response = request.send()
 
-    KsqlResponse(response.code, "")
+    KsqlResponse(response.code, response.body match { case Left(x) => x case _ => "SUCCESS" } )
   }
 
   private def clean(ksql: String) = {

@@ -47,12 +47,16 @@ object SetupDemo {
 
   private def handleKsqlQuery(ksql: String) : Boolean = {
     println(s"RUNNING: $ksql")
-    Ksql.query(ksql).code == 200
+    val result = Ksql.query(ksql)
+    println(s"${result.code}: ${result.body}")
+    result.code == 200
   }
 
   private def handleKsqlCommand(ksql: String) : Boolean = {
     println(s"RUNNING: $ksql")
-    Ksql.command(ksql).code == 200
+    val result = Ksql.command(ksql)
+    println(s"${result.code}: ${result.body}")
+    result.code == 200
   }
 
   private def handleScalaCode(line: String) : Boolean = {
