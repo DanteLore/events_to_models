@@ -3,18 +3,37 @@
 
 ! com.logicalgenetics.beer.BeerProducer.main(Array.empty[String])
 
+! com.logicalgenetics.beer.VoteProducer.main(Array.empty[String])
+
 create stream raw_sales_stream with (kafka_topic='sales', value_format='avro');
 
 create stream sales_stream with (kafka_topic='sales_stream', value_format='avro') as select CAST(beer_id as int) as beer_id, bar, price from raw_sales_stream partition by beer_id;
+
+create stream raw_votes_stream with (kafka_topic='votes', value_format='avro');
+
+create stream votes_stream with (kafka_topic='votes_stream', value_format='avro') as select CAST(customer_id as int) as customer_id, beer_id, vote from raw_votes_stream partition by customer_id;
+
+create stream votes_with_key with (kafka_topic='votes_with_key', value_format='avro') as select *, (cast(beer_id as string) + '/' + cast(customer_id as string)) as key from votes_stream;
+
+create stream customer_votes_stream with (kafka_topic='customer_votes_stream', value_format='avro') as select * from votes_with_key partition by key;
+
+select * from customer_votes_stream emit changes limit 1
+
+create table customer_votes_table with (kafka_topic='customer_votes_stream', value_format='avro', key='key');
+
+create table votes_by_beer with (kafka_topic='votes_by_beer', value_format='avro') as select beer_id, count(vote) as vote_count, sum(vote) as vote_score from customer_votes_table group by beer_id;
 
 create stream raw_beer_stream with (kafka_topic='beers', value_format='avro');
 
 create stream beer_stream_with_key with (kafka_topic='beer_stream_with_key', value_format='avro') as select CAST(id as int) as id, row, abv, ibu, name, style, brewery_id, ounces from raw_beer_stream partition by id;
 
 ! com.logicalgenetics.beer.BeerProducer.main(Array.empty[String])
+
 select * from beer_stream_with_key emit changes limit 1
 
 create table beer_table (rowkey integer key, id integer, row integer, abv double, ibu double, name string, style string, brewery_id integer, ounces double) with (kafka_topic='beer_stream_with_key', value_format='avro', key='id');
+
+create table best_beers with (kafka_topic='best_beers', value_format='avro') as select bt.id, bt.name, vb.vote_count, vb.vote_score from votes_by_beer vb join beer_table bt on (vb.beer_id = bt.id);
 
 create stream live_sales with (kafka_topic='live_sales', value_format='avro') as select * from sales_stream partition by beer_id;
 
@@ -44,7 +63,7 @@ create stream outgoing_sales with (kafka_topic='outgoing_sales', value_format='a
 
 create stream live_beer_sales_stringified with (kafka_topic='live_beer_sales_stringified', value_format='avro', partitions=1) as select bar, price, name, abv, cast(brewery_id as VARCHAR) as brewery_id from live_beer_sales;
 
-create stream live_beer_brewery_sales with (kafka_topic='live_beer_brewery_sales', value_format='avro', partitions=1) as select bar, price, bs.name, abv, br.id as brewery_id, br.name as brewery_name, city, state from live_beer_sales_stringified bs join brewery_table br on (bs.brewery_id = br.id);
+create stream live_beer_brewery_sales with (kafka_topic='live_beer_brewery_sales', value_format='avro', partitions=1) as select bar, price, bs.name as beer_name, abv, br.id as brewery_id, br.name as brewery_name, city, state from live_beer_sales_stringified bs join brewery_table br on (bs.brewery_id = br.id);
 
 create table brewery_league_data with (kafka_topic='brewery_league_data', value_format='avro') as select brewery_id, sum(price) as sales from live_beer_brewery_sales group by brewery_id;
 
