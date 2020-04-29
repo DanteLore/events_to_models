@@ -53,8 +53,8 @@ object VoteProducer {
     vote.put("beer_id", beerIds(Random.nextInt(10)).toInt) // Limit to first 10 beers to demonstrate dup votes more quickly
     vote.put("customer_id", Random.nextInt(10))
     vote.put("vote", Random.nextInt(9) match {
-      case x if 0 to 4 contains x => 1
-      case x if 5 to 8 contains x => -1
+      case x if 0 to 3 contains x => 1
+      case x if 4 to 7 contains x => -1
       case _ => 0
     })
     vote
