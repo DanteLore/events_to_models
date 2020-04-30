@@ -24,8 +24,8 @@ object BeerProducer {
 
       "fields": [
         {"name": "row",        "type": "int",               "default": 0},
-        {"name": "abv",        "type": ["double", "null"],  "default": null},
-        {"name": "ibu",        "type": ["double", "null"],  "default": null},
+        {"name": "abv",        "type": ["null", "double"],  "default": null},
+        {"name": "ibu",        "type": ["null", "double"],  "default": null},
         {"name": "id",         "type": "int",               "default": 0},
         {"name": "name",       "type": "string",            "default": "UNKNOWN"},
         {"name": "style",      "type": "string",            "default": "UNKNOWN"},

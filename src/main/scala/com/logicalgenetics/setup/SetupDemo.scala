@@ -28,6 +28,7 @@ object SetupDemo {
   }
 
   private def handlePipedCommand(cmd: String) : Boolean = {
+    println(cmd)
     val Array(a, b) = cmd.split('|').map(_.trim).filterNot(_.isEmpty)
 
     (a #| b).!!.trim

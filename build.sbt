@@ -16,7 +16,6 @@ libraryDependencies ++= {
     "org.apache.kafka" %% "kafka-streams-scala" % kafkaV,
     "ch.qos.logback" % "logback-classic" % "1.2.3",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-//    "org.slf4j" % "slf4j-api" % "1.7.1",
     "org.apache.avro" % "avro" % "1.8.2",
     "io.confluent" % "kafka-avro-serializer" % "5.5.0",
     "io.confluent" % "kafka-streams-avro-serde" % "5.5.0",
