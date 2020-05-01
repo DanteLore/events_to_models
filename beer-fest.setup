@@ -11,7 +11,7 @@ create stream sales_stream with (kafka_topic='sales_stream', value_format='avro'
 
 create stream raw_votes_stream with (kafka_topic='votes', value_format='avro');
 
-create stream votes_stream with (kafka_topic='votes_stream', value_format='avro') as select CAST(customer_id as int) as customer_id, beer_id, vote from raw_votes_stream partition by customer_id;
+create stream votes_stream with (kafka_topic='votes_stream', value_format='avro') as select CAST(customerId as int) as customerId as customer_id, beerId as beer_id, vote from raw_votes_stream partition by customer_id;
 
 create stream votes_with_key with (kafka_topic='votes_with_key', value_format='avro') as select *, (cast(beer_id as string) + '/' + cast(customer_id as string)) as key from votes_stream;
 
@@ -21,7 +21,7 @@ select * from customer_votes_stream emit changes limit 1
 
 create table customer_votes_table with (kafka_topic='customer_votes_stream', value_format='avro', key='key');
 
-create table votes_by_beer with (kafka_topic='votes_by_beer', value_format='avro') as select beer_id, count(vote) as vote_count, sum(vote) as vote_score from customer_votes_table group by beer_id;
+create table votes_by_beer with (kafka_topic='votes_by_beer', value_format='avro') as select beer_id, count(beer_id) as vote_count, sum(vote) as vote_score from customer_votes_table group by beer_id;
 
 create stream raw_beer_stream with (kafka_topic='beers', value_format='avro');
 

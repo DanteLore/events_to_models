@@ -1,5 +1,6 @@
 package com.logicalgenetics.streams
 
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 import java.util.{Collections, Properties}
 
@@ -112,7 +113,7 @@ object BreweryCsvProcessorStream {
 
     // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
     sys.ShutdownHookThread {
-      streams.close(10, TimeUnit.SECONDS)
+      streams.close(Duration.ofSeconds(10))
     }
   }
 }

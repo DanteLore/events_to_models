@@ -17,6 +17,8 @@ libraryDependencies ++= {
     "ch.qos.logback" % "logback-classic" % "1.2.3",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "org.apache.avro" % "avro" % "1.8.2",
+    "com.sksamuel.avro4s" %% "avro4s-core" % "3.0.9",
+    "com.sksamuel.avro4s" %% "avro4s-kafka" % "3.0.9",
     "io.confluent" % "kafka-avro-serializer" % "5.5.0",
     "io.confluent" % "kafka-streams-avro-serde" % "5.5.0",
     "javax.ws.rs" % "javax.ws.rs-api" % "2.1" artifacts Artifact("javax.ws.rs-api", "jar", "jar"),
