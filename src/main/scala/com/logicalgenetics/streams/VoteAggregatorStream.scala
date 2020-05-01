@@ -38,7 +38,7 @@ object VoteAggregatorStream {
     // Get the incoming votes
     val votesBin: KStream[String, Array[Byte]] = builder.stream[String, Array[Byte]](votes_topic)
 
-    val votes = votesBin.map((, v) => (k, deserializeAvro[Vote](v)))
+    val votes = votesBin.map((k, v) => (k, deserializeAvro[Vote](v)))
 
     val customerVotes: KStream[String, String] = votes.map {
       // Every incoming record comes through the stream here, BUT...
