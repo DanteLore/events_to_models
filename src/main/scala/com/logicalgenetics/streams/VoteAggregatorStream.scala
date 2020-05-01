@@ -17,7 +17,7 @@ import java.util
 import collection.JavaConverters._
 
 object RecordFormatSerdes {
-  def recordFormatSerdes[T <: Product](implicit rf: RecordFormat[T]): Serde[T] = {
+  def recordFormatSerdes[T <: Vote](implicit rf: RecordFormat[T]): Serde[T] = {
     Serdes.serdeFrom(
       new Avro4sSerializer(),
       new Avro4sDeserializer()
@@ -25,7 +25,7 @@ object RecordFormatSerdes {
   }
 }
 
-class Avro4sDeserializer[T <: Product](implicit rf: RecordFormat[T])  extends Deserializer[T] {
+class Avro4sDeserializer[T <: Vote](implicit rf: RecordFormat[T])  extends Deserializer[T] {
   private var inner = new GenericAvroDeserializer()
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
@@ -83,7 +83,7 @@ object VoteAggregatorStream {
   private val stringSerde: Serde[String] = Serdes.String
 
   import ImplicitSerdes._
-  ImplicitSerdes.configure("https://localhost:8081")
+  ImplicitSerdes.configure("http://localhost:8081")
 
   private implicit val consumed: Consumed[String, Vote] = Consumed.`with`(stringSerde, myTypeSerdes)
   private implicit val produced: Produced[String, String] = Produced.`with`(stringSerde, stringSerde)
