@@ -5,7 +5,7 @@ import java.util
 import java.util.Properties
 
 import com.logicalgenetics.Config
-import com.logicalgenetics.avro.RecordFormatSerdes
+import com.logicalgenetics.avro.CaseClassSerdes
 import com.logicalgenetics.model.Vote
 import com.sksamuel.avro4s.RecordFormat
 import org.apache.avro.generic.GenericRecord
@@ -14,7 +14,6 @@ import org.apache.kafka.streams.kstream.{Consumed, Produced}
 import org.apache.kafka.streams.scala.StreamsBuilder
 import org.apache.kafka.streams.scala.kstream.KStream
 import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
-import scala.jdk.CollectionConverters._
 
 object VoteAggregatorStream {
   private val votes_topic = "votes"
@@ -27,13 +26,8 @@ object VoteAggregatorStream {
   }
 
   private val stringSerde: Serde[String] = Serdes.String
-  private val voteSerdes: Serde[Vote] = {
-    implicit val rf = RecordFormat[Vote]
-    val serdes = RecordFormatSerdes.recordFormatSerdes
-    val config: util.Map[String, _] = Map("schema.registry.url" -> "http://localhost:8081").asJava
-    serdes.configure(config, false)
-    serdes
-  }
+  implicit val voteRF: RecordFormat[Vote] = RecordFormat[Vote]
+  private val voteSerdes: Serde[Vote] = CaseClassSerdes.serdeFor[Vote]
 
   private implicit val consumed: Consumed[String, Vote] = Consumed.`with`(stringSerde, voteSerdes)
   private implicit val produced: Produced[String, String] = Produced.`with`(stringSerde, stringSerde)

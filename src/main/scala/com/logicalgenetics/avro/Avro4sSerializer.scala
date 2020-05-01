@@ -7,7 +7,7 @@ import io.confluent.kafka.streams.serdes.avro.GenericAvroSerializer
 import org.apache.kafka.common.serialization.Serializer
 
 class Avro4sSerializer[T <: Product](implicit rf: RecordFormat[T])  extends Serializer[T] {
-  private var inner = new GenericAvroSerializer()
+  private val inner = new GenericAvroSerializer()
 
   override def serialize(topic: String, data: T): Array[Byte] = {
     val gr = rf.to(data)

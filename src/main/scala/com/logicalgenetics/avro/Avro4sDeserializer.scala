@@ -7,7 +7,7 @@ import io.confluent.kafka.streams.serdes.avro.GenericAvroDeserializer
 import org.apache.kafka.common.serialization.Deserializer
 
 class Avro4sDeserializer[T <: Product](implicit rf: RecordFormat[T])  extends Deserializer[T] {
-  private var inner = new GenericAvroDeserializer()
+  private val inner = new GenericAvroDeserializer()
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
     val bytes = inner.deserialize(topic, data)
