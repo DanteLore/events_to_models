@@ -8,7 +8,7 @@ import org.apache.kafka.common.serialization.{Deserializer, Serde, Serdes, Seria
 
 import scala.jdk.CollectionConverters._
 
-object CaseClassSerdes {
+object AvroCaseClassSerdes {
   private class Avro4sSerializer[T <: Product](implicit rf: RecordFormat[T])  extends Serializer[T] {
     private val inner = new GenericAvroSerializer()
 
