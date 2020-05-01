@@ -27,7 +27,7 @@ object VoteAggregatorStream {
 
   private val stringSerde: Serde[String] = Serdes.String
   implicit val voteRF: RecordFormat[Vote] = RecordFormat[Vote]
-  private val voteSerdes: Serde[Vote] = CaseClassSerdes.serdeFor[Vote]
+  private val voteSerdes: Serde[Vote] = CaseClassSerdes("http://localhost:8081")
 
   private implicit val consumed: Consumed[String, Vote] = Consumed.`with`(stringSerde, voteSerdes)
   private implicit val produced: Produced[String, String] = Produced.`with`(stringSerde, stringSerde)
