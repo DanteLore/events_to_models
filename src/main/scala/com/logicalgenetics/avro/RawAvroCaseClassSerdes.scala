@@ -1,7 +1,6 @@
 package com.logicalgenetics.avro
 
 import java.io.ByteArrayOutputStream
-import java.util
 
 import com.sksamuel.avro4s.RecordFormat
 import org.apache.avro.Schema
@@ -10,6 +9,7 @@ import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.kafka.common.serialization.{Deserializer, Serde, Serdes, Serializer}
 
 object RawAvroCaseClassSerdes {
+
   private class Avro4sSerializer[T <: Product](implicit recordFormat: RecordFormat[T], schema: Schema)  extends Serializer[T] {
 
     private val writer = new GenericDatumWriter[GenericRecord](schema)
