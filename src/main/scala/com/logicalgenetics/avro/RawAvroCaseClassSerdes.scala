@@ -24,14 +24,6 @@ object RawAvroCaseClassSerdes {
       out.close()
       out.toByteArray
     }
-
-    override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
-
-    }
-
-    override def close(): Unit = {
-
-    }
   }
 
   private class Avro4sDeserializer[T <: Product](implicit recordFormat: RecordFormat[T], schema: Schema)  extends Deserializer[T] {
@@ -39,18 +31,14 @@ object RawAvroCaseClassSerdes {
     val reader = new GenericDatumReader[GenericRecord](schema)
 
     override def deserialize(topic: String, data: Array[Byte]): T = {
-      val decoder = DecoderFactory.get.binaryDecoder(data.drop(5), null)
+
+      // Skip 1 'magic' byte and an Int32 for the Schema number
+      val payload = data.drop(5)
+
+      val decoder = DecoderFactory.get.binaryDecoder(payload, null)
       val genericRecord = reader.read(null, decoder)
 
       recordFormat.from(genericRecord)
-    }
-
-    override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
-
-    }
-
-    override def close(): Unit = {
-
     }
   }
 
