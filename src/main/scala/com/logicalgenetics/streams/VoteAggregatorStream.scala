@@ -5,9 +5,10 @@ import java.util
 import java.util.Properties
 
 import com.logicalgenetics.Config
-import com.logicalgenetics.avro.AvroCaseClassSerdes
+import com.logicalgenetics.avro.{KafkaAvroCaseClassSerdes, RawAvroCaseClassSerdes}
 import com.logicalgenetics.model.Vote
-import com.sksamuel.avro4s.RecordFormat
+import com.sksamuel.avro4s.{AvroSchema, RecordFormat}
+import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.serialization.{Serde, Serdes}
 import org.apache.kafka.streams.kstream.{Consumed, Produced}
@@ -26,8 +27,10 @@ object VoteAggregatorStream {
   }
 
   private val stringSerde: Serde[String] = Serdes.String
+  implicit val voteSchema: Schema = AvroSchema[Vote]
   implicit val voteRF: RecordFormat[Vote] = RecordFormat[Vote]
-  private val voteSerdes: Serde[Vote] = AvroCaseClassSerdes("http://localhost:8081")
+  private val voteSerdes: Serde[Vote] = RawAvroCaseClassSerdes()
+  //private val voteSerdes: Serde[Vote] = AvroCaseClassSerdes(Config.schemaRegistry)
 
   private implicit val consumed: Consumed[String, Vote] = Consumed.`with`(stringSerde, voteSerdes)
   private implicit val produced: Produced[String, String] = Produced.`with`(stringSerde, stringSerde)

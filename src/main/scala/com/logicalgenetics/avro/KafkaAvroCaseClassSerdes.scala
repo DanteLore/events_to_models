@@ -8,13 +8,13 @@ import org.apache.kafka.common.serialization.{Deserializer, Serde, Serdes, Seria
 
 import scala.jdk.CollectionConverters._
 
-object AvroCaseClassSerdes {
-  private class Avro4sSerializer[T <: Product](implicit rf: RecordFormat[T])  extends Serializer[T] {
+object KafkaAvroCaseClassSerdes {
+  private class Avro4sSerializer[T <: Product](implicit recordFormat: RecordFormat[T])  extends Serializer[T] {
     private val inner = new GenericAvroSerializer()
 
     override def serialize(topic: String, data: T): Array[Byte] = {
-      val gr = rf.to(data)
-      inner.serialize(topic, gr)
+      val genericRecord = recordFormat.to(data)
+      inner.serialize(topic, genericRecord)
     }
 
     override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
@@ -26,12 +26,12 @@ object AvroCaseClassSerdes {
     }
   }
 
-  private class Avro4sDeserializer[T <: Product](implicit rf: RecordFormat[T])  extends Deserializer[T] {
+  private class Avro4sDeserializer[T <: Product](implicit recordFormat: RecordFormat[T])  extends Deserializer[T] {
     private val inner = new GenericAvroDeserializer()
 
     override def deserialize(topic: String, data: Array[Byte]): T = {
-      val bytes = inner.deserialize(topic, data)
-      rf.from(bytes)
+      val genericRecord = inner.deserialize(topic, data)
+      recordFormat.from(genericRecord)
     }
 
     override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
