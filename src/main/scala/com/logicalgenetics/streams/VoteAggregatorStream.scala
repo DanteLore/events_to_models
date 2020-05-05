@@ -21,6 +21,7 @@ object VoteAggregatorStream {
     val p = new Properties()
     p.put(StreamsConfig.APPLICATION_ID_CONFIG, "vote_aggregator")
     p.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Config.servers)
+    p.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000) // Limit buffering to increase chattiness for demo!
     p
   }
 
