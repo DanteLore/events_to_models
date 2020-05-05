@@ -43,7 +43,7 @@ object KafkaAvroCaseClassSerdes {
     }
   }
 
-  def apply[T <: Product](schemaRegUrl : String)(implicit rf: RecordFormat[T]): Serde[T] = {
+  def apply[T <: Product](schemaRegUrl : String)(implicit recordFormat: RecordFormat[T]): Serde[T] = {
     val serdes = Serdes.serdeFrom(
       new Avro4sSerializer(),
       new Avro4sDeserializer()

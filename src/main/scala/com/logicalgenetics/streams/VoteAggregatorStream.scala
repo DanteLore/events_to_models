@@ -11,7 +11,6 @@ import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.{Serde, Serdes}
 import org.apache.kafka.streams.kstream.{Consumed, Grouped, Materialized, Produced}
 import org.apache.kafka.streams.scala.{ByteArrayKeyValueStore, StreamsBuilder}
-import org.apache.kafka.streams.scala.kstream.KStream
 import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
 
 object VoteAggregatorStream {
@@ -53,29 +52,14 @@ object VoteAggregatorStream {
       .withKeySerde(Serdes.String)
       .withValueSerde(scoreSerde)
 
-  def main(args: Array[String]): Unit = {
-    // Call our method to construct the streams
-    val builder: StreamsBuilder = constructStreams
-
-    // Start the streams
-    val streams: KafkaStreams = new KafkaStreams(builder.build(), properties)
-    streams.cleanUp()
-    streams.start()
-
-    // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
-    sys.ShutdownHookThread {
-      streams.close(Duration.ofSeconds(10))
-    }
-  }
-
   private def constructStreams: StreamsBuilder = {
     val builder = new StreamsBuilder()
 
     // Get the incoming votes
-    val votes: KStream[String, Vote] = builder.stream[String, Vote](inputTopic)
+    val votes = builder.stream[String, Vote](inputTopic)
 
     // Group and key the votes by customer and beer IDs
-    val customerVotes: KStream[String, Vote] = votes.map {
+    val customerVotes = votes.map {
       (_, v) => (s"${v.beerId}/${v.customerId}", v)
     }
 
@@ -98,5 +82,20 @@ object VoteAggregatorStream {
 
     // Done :)
     builder
+  }
+
+  def main(args: Array[String]): Unit = {
+    // Call our method to construct the streams
+    val builder: StreamsBuilder = constructStreams
+
+    // Start the streams
+    val streams: KafkaStreams = new KafkaStreams(builder.build(), properties)
+    streams.cleanUp()
+    streams.start()
+
+    // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
+    sys.ShutdownHookThread {
+      streams.close(Duration.ofSeconds(10))
+    }
   }
 }
