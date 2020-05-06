@@ -14,6 +14,7 @@ libraryDependencies ++= {
     "org.apache.kafka" % "kafka-streams" % kafkaV,
     "org.apache.kafka" % "kafka-clients" % kafkaV,
     "org.apache.kafka" %% "kafka-streams-scala" % kafkaV,
+    "org.apache.kafka" % "kafka-streams-test-utils" % kafkaV % Test,
     "ch.qos.logback" % "logback-classic" % "1.2.3",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "org.apache.avro" % "avro" % "1.8.2",
@@ -29,6 +30,7 @@ libraryDependencies ++= {
     "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",
     "org.scalatra" %% "scalatra-json" % "2.7.0",
     "org.json4s" %% "json4s-jackson" % "3.6.7",
-    "com.softwaremill.sttp" %% "core" % "1.7.2"
+    "com.softwaremill.sttp" %% "core" % "1.7.2",
+    "org.scalatest" %% "scalatest" % "3.1.1" % Test
   )
 }
