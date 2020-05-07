@@ -7,6 +7,7 @@ import com.logicalgenetics.Config
 import com.logicalgenetics.avro.KafkaAvroCaseClassSerdes
 import com.logicalgenetics.model.{Score, Vote}
 import com.sksamuel.avro4s.{AvroSchema, RecordFormat}
+import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient, SchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.{Serde, Serdes}
 import org.apache.kafka.streams.kstream.{Consumed, Grouped, Materialized, Produced}
@@ -14,10 +15,10 @@ import org.apache.kafka.streams.scala.{ByteArrayKeyValueStore, StreamsBuilder}
 import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
 
 object VoteAggregatorStream {
-  private val inputTopic = "votes"
-  private val beerScoresTopic = "beer_scores"
+  val inputTopic = "votes"
+  val beerScoresTopic = "beer_scores"
 
-  private val properties: Properties = {
+  val streamProperties: Properties = {
     val p = new Properties()
     p.put(StreamsConfig.APPLICATION_ID_CONFIG, "vote_aggregator")
     p.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Config.servers)
@@ -25,36 +26,35 @@ object VoteAggregatorStream {
     p
   }
 
-  // SO MANY implicit serdes!!
-  private val voteSerde: Serde[Vote] = {
-    implicit val schema: Schema = AvroSchema[Vote]
-    implicit val recordFormat: RecordFormat[Vote] = RecordFormat[Vote]
-    KafkaAvroCaseClassSerdes(Config.schemaRegistry)
-  }
+  def constructStreams(builder : StreamsBuilder, schemaRegistryClient: SchemaRegistryClient): Unit  = {
 
-  private val scoreSerde: Serde[Score] = {
-    implicit val schema: Schema = AvroSchema[Score]
-    implicit val recordFormat: RecordFormat[Score] = RecordFormat[Score]
-    KafkaAvroCaseClassSerdes(Config.schemaRegistry)
-  }
+    // SO MANY implicit serdes!!
+    val voteSerde: Serde[Vote] = {
+      implicit val schema: Schema = AvroSchema[Vote]
+      implicit val recordFormat: RecordFormat[Vote] = RecordFormat[Vote]
+      KafkaAvroCaseClassSerdes(Config.schemaRegistry, schemaRegistryClient)
+    }
 
-  implicit val consumedVotes: Consumed[String, Vote] = Consumed.`with`(Serdes.String, voteSerde)
-  implicit val groupedVotes: Grouped[String, Vote] = Grouped.`with`(Serdes.String, voteSerde)
-  implicit val groupedScores: Grouped[String, Score] = Grouped.`with`(Serdes.String, scoreSerde)
-  implicit val producedScores: Produced[String, Score] = Produced.`with`(Serdes.String, scoreSerde)
+    val scoreSerde: Serde[Score] = {
+      implicit val schema: Schema = AvroSchema[Score]
+      implicit val recordFormat: RecordFormat[Score] = RecordFormat[Score]
+      KafkaAvroCaseClassSerdes(Config.schemaRegistry, schemaRegistryClient)
+    }
 
-  implicit val materialisedVotes : Materialized[String, Vote, ByteArrayKeyValueStore] =
-    Materialized.as("votes_by_customer")
-      .withKeySerde(Serdes.String)
-      .withValueSerde(voteSerde)
+    implicit val consumedVotes: Consumed[String, Vote] = Consumed.`with`(Serdes.String, voteSerde)
+    implicit val groupedVotes: Grouped[String, Vote] = Grouped.`with`(Serdes.String, voteSerde)
+    implicit val groupedScores: Grouped[String, Score] = Grouped.`with`(Serdes.String, scoreSerde)
+    implicit val producedScores: Produced[String, Score] = Produced.`with`(Serdes.String, scoreSerde)
 
-  implicit val materialisedScores : Materialized[String, Score, ByteArrayKeyValueStore] =
-    Materialized.as("scores_by_beer")
-      .withKeySerde(Serdes.String)
-      .withValueSerde(scoreSerde)
+    implicit val materialisedVotes : Materialized[String, Vote, ByteArrayKeyValueStore] =
+      Materialized.as("votes_by_customer")
+        .withKeySerde(Serdes.String)
+        .withValueSerde(voteSerde)
 
-  private def constructStreams: StreamsBuilder = {
-    val builder = new StreamsBuilder()
+    implicit val materialisedScores : Materialized[String, Score, ByteArrayKeyValueStore] =
+      Materialized.as("scores_by_beer")
+        .withKeySerde(Serdes.String)
+        .withValueSerde(scoreSerde)
 
     // Get the incoming votes
     val votes = builder.stream[String, Vote](inputTopic)
@@ -86,11 +86,15 @@ object VoteAggregatorStream {
   }
 
   def main(args: Array[String]): Unit = {
+    val builder = new StreamsBuilder()
+
+    val schemaRegistryClient = new CachedSchemaRegistryClient(Config.schemaRegistry, Config.schemaRegCacheSize)
+
     // Call our method to construct the streams
-    val builder: StreamsBuilder = constructStreams
+    constructStreams(builder, schemaRegistryClient)
 
     // Start the streams
-    val streams: KafkaStreams = new KafkaStreams(builder.build(), properties)
+    val streams: KafkaStreams = new KafkaStreams(builder.build(), streamProperties)
     streams.cleanUp()
     streams.start()
 
