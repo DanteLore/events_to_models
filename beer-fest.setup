@@ -5,7 +5,7 @@
 
 ! com.logicalgenetics.beer.BeerProducer.main(Array.empty[String])
 
-! com.logicalgenetics.streams.VoteAggregatorStream.main(Array.empty[String])
+! com.logicalgenetics.voting.VoteAggregatorStream.main(Array.empty[String])
 
 create stream raw_sales_stream with (kafka_topic='sales', value_format='avro');
 
@@ -33,7 +33,7 @@ create table beer_league_table with (kafka_topic='beer_league_table', value_form
 
 $ cat data/breweries.csv | ~/confluent-5.5.0/bin/kafka-console-producer --broker-list localhost:9092 --topic raw_brewery_text
 
-! com.logicalgenetics.streams.BreweryCsvProcessorStream.main(Array.empty[String])
+! com.logicalgenetics.breweries.BreweryCsvProcessorStream.main(Array.empty[String])
 
 create stream brewery_stream with (kafka_topic='breweries', value_format='avro');
 

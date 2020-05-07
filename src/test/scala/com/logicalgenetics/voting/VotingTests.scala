@@ -4,8 +4,7 @@ import java.time.{Duration, Instant}
 
 import com.logicalgenetics.Config
 import com.logicalgenetics.avro.KafkaAvroCaseClassSerdes
-import com.logicalgenetics.model.{Score, Vote}
-import com.logicalgenetics.streams.VoteAggregatorStream
+import com.logicalgenetics.voting.model.{Score, Vote}
 import com.sksamuel.avro4s.RecordFormat
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient
 import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
@@ -41,10 +40,10 @@ class VotingTests  extends AnyFlatSpec with Matchers with BeforeAndAfterEach wit
     }
 
     //Create Actual Stream Processing pipeline
-    VoteAggregatorStream.constructStreams(builder, schemaRegistryClient)
-    driver = Some(new TopologyTestDriver(builder.build, VoteAggregatorStream.streamProperties))
-    inputTopic = Some(driver.get.createInputTopic(VoteAggregatorStream.inputTopic, new StringSerializer(), voteSerde.serializer(), recordBaseTime, advance1Min))
-    outputTopic = Some(driver.get.createOutputTopic(VoteAggregatorStream.beerScoresTopic, new StringDeserializer(), scoreSerde.deserializer()))
+    VoteAggregatorStreamBuilder.build(builder, schemaRegistryClient)
+    driver = Some(new TopologyTestDriver(builder.build, VoteAggregatorStreamBuilder.streamProperties))
+    inputTopic = Some(driver.get.createInputTopic(VoteAggregatorStreamBuilder.inputTopic, new StringSerializer(), voteSerde.serializer(), recordBaseTime, advance1Min))
+    outputTopic = Some(driver.get.createOutputTopic(VoteAggregatorStreamBuilder.beerScoresTopic, new StringDeserializer(), scoreSerde.deserializer()))
   }
 
   override def afterEach(): Unit = {

@@ -1,20 +1,19 @@
-package com.logicalgenetics.streams
+package com.logicalgenetics.voting
 
-import java.time.Duration
 import java.util.Properties
 
 import com.logicalgenetics.Config
 import com.logicalgenetics.avro.KafkaAvroCaseClassSerdes
-import com.logicalgenetics.model.{Score, Vote}
+import com.logicalgenetics.voting.model.{Score, Vote}
 import com.sksamuel.avro4s.{AvroSchema, RecordFormat}
-import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient, SchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.{Serde, Serdes}
+import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.kstream.{Consumed, Grouped, Materialized, Produced}
 import org.apache.kafka.streams.scala.{ByteArrayKeyValueStore, StreamsBuilder}
-import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
 
-object VoteAggregatorStream {
+object VoteAggregatorStreamBuilder {
   val inputTopic = "votes"
   val beerScoresTopic = "beer_scores"
 
@@ -26,7 +25,7 @@ object VoteAggregatorStream {
     p
   }
 
-  def constructStreams(builder : StreamsBuilder, schemaRegistryClient: SchemaRegistryClient): Unit  = {
+  def build(builder: StreamsBuilder, schemaRegistryClient: SchemaRegistryClient): Unit = {
 
     // SO MANY implicit serdes!!
     val voteSerde: Serde[Vote] = {
@@ -46,12 +45,12 @@ object VoteAggregatorStream {
     implicit val groupedScores: Grouped[String, Score] = Grouped.`with`(Serdes.String, scoreSerde)
     implicit val producedScores: Produced[String, Score] = Produced.`with`(Serdes.String, scoreSerde)
 
-    implicit val materialisedVotes : Materialized[String, Vote, ByteArrayKeyValueStore] =
+    implicit val materialisedVotes: Materialized[String, Vote, ByteArrayKeyValueStore] =
       Materialized.as("votes_by_customer")
         .withKeySerde(Serdes.String)
         .withValueSerde(voteSerde)
 
-    implicit val materialisedScores : Materialized[String, Score, ByteArrayKeyValueStore] =
+    implicit val materialisedScores: Materialized[String, Score, ByteArrayKeyValueStore] =
       Materialized.as("scores_by_beer")
         .withKeySerde(Serdes.String)
         .withValueSerde(scoreSerde)
@@ -83,24 +82,5 @@ object VoteAggregatorStream {
 
     // Done :)
     builder
-  }
-
-  def main(args: Array[String]): Unit = {
-    val builder = new StreamsBuilder()
-
-    val schemaRegistryClient = new CachedSchemaRegistryClient(Config.schemaRegistry, Config.schemaRegCacheSize)
-
-    // Call our method to construct the streams
-    constructStreams(builder, schemaRegistryClient)
-
-    // Start the streams
-    val streams: KafkaStreams = new KafkaStreams(builder.build(), streamProperties)
-    streams.cleanUp()
-    streams.start()
-
-    // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
-    sys.ShutdownHookThread {
-      streams.close(Duration.ofSeconds(10))
-    }
   }
 }

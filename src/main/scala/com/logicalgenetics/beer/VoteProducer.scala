@@ -3,7 +3,7 @@ package com.logicalgenetics.beer
 import java.util.Properties
 
 import com.logicalgenetics.Config
-import com.logicalgenetics.model.Vote
+import com.logicalgenetics.voting.model.Vote
 import com.sksamuel.avro4s.{AvroSchema, RecordFormat}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.Schema

@@ -1,7 +1,6 @@
-package com.logicalgenetics.streams
+package com.logicalgenetics.breweries
 
 import java.time.Duration
-import java.util.concurrent.TimeUnit
 import java.util.{Collections, Properties}
 
 import com.logicalgenetics.Config
@@ -19,7 +18,7 @@ object BreweryCsvProcessorStream {
 
   lazy val schema: Schema = new Schema.Parser().parse("""
     {
-      "namespace": "logicalgenetics.breweries",
+      "namespace": "com.logicalgenetics.breweries",
       "type": "record",
       "name": "brewery",
 
