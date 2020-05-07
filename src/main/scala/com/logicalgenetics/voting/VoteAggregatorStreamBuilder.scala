@@ -72,15 +72,9 @@ object VoteAggregatorStreamBuilder {
     val beerScores = votesByCustomerAndBeer
       .mapValues(vote => Score(vote.beerId, vote.vote))
       .groupBy((_, score) => (score.beerId.toString, score))
-      .reduce(
-        (v1, v2) => v1 + v2,
-        (v1, v2) => v1 - v2
-      )
+      .reduce(_ + _, _ - _)
 
     // Write to outgoing topic
     beerScores.toStream.to(beerScoresTopic)
-
-    // Done :)
-    builder
   }
 }
