@@ -4,7 +4,7 @@ import java.time.Duration
 import java.util.{Collections, Properties}
 
 import com.logicalgenetics.Config
-import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
@@ -40,7 +40,7 @@ object BreweryCsvProcessorStream {
   val stringSerde: Serde[String] = Serdes.String
   val genericAvroSerde: Serde[GenericRecord] = {
     val gas = new GenericAvroSerde
-    gas.configure(Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, Config.schemaRegistry), false)
+    gas.configure(Collections.singletonMap(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, Config.schemaRegistry), false)
     gas
   }
   implicit val consumed: Consumed[String, String] = Consumed.`with`(stringSerde, stringSerde)
@@ -63,7 +63,7 @@ object BreweryCsvProcessorStream {
       case Array(_, _, _, state) if state.length != 2 => false
 
       // Healthy row
-      case Array(row, name, city, state) => true
+      case Array(_, _, _, _) => true
 
       // Otherwise bad row (wrong number of cols etc)
       case _ => false
