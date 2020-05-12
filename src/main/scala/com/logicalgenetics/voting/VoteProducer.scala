@@ -1,4 +1,4 @@
-package com.logicalgenetics.beer
+package com.logicalgenetics.voting
 
 import java.util.Properties
 
@@ -7,7 +7,7 @@ import com.logicalgenetics.voting.model.Vote
 import com.sksamuel.avro4s.{AvroSchema, RecordFormat}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
 

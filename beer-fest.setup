@@ -1,5 +1,5 @@
 
-! com.logicalgenetics.beer.VoteProducer.main(Array.empty[String])
+! com.logicalgenetics.voting.VoteProducer.main(Array.empty[String])
 
 ! com.logicalgenetics.beer.SaleProducer.main(Array.empty[String])
 

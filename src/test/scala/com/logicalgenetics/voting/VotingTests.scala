@@ -42,7 +42,7 @@ class VotingTests extends AnyFlatSpec with Matchers with BeforeAndAfterEach with
     //Create Actual Stream Processing pipeline
     VoteAggregatorStreamBuilder.build(builder, schemaRegistryClient)
     driver = Some(new TopologyTestDriver(builder.build, VoteAggregatorStreamBuilder.streamProperties))
-    inputTopic = Some(driver.get.createInputTopic(VoteAggregatorStreamBuilder.inputTopic, new StringSerializer(), voteSerde.serializer(), recordBaseTime, advance1Min))
+    inputTopic = Some(driver.get.createInputTopic(VoteAggregatorStreamBuilder.inputTopic, new StringSerializer(), voteSerde.serializer()))
     outputTopic = Some(driver.get.createOutputTopic(VoteAggregatorStreamBuilder.beerScoresTopic, new StringDeserializer(), scoreSerde.deserializer()))
   }
 
@@ -86,19 +86,21 @@ class VotingTests extends AnyFlatSpec with Matchers with BeforeAndAfterEach with
     val result = outputTopic.get.readRecordsToList().asScala.toList
 
     result.last.value shouldBe Score(beerId = 1, score = 1, count = 1)
+    // FAILS! result.length shouldBe 1
   }
 
   "Vote aggregator" should "take the latest vote for a customer" in {
     Seq(
-      Vote(beerId = 1, customerId = 1, vote = 1),
-      Vote(beerId = 1, customerId = 1, vote = 0),
-      Vote(beerId = 1, customerId = 1, vote = 1),
-      Vote(beerId = 1, customerId = 1, vote = -1)
+      Vote(beerId = 10, customerId = 100, vote = 1),
+      Vote(beerId = 10, customerId = 100, vote = 0),
+      Vote(beerId = 10, customerId = 100, vote = 0),
+      Vote(beerId = 10, customerId = 100, vote = -1)
     ) foreach { i => inputTopic.get.pipeInput(i) }
 
     val result = outputTopic.get.readRecordsToList().asScala.toList
 
-    result.last.value shouldBe Score(beerId = 1, score = -1, count = 1)
+    result.last.value shouldBe Score(beerId = 10, score = -1, count = 1)
+    // FAILS! result.length shouldBe 3
   }
 
   "Vote aggregator" should "deal with multiple customers changing their minds" in {
@@ -118,6 +120,10 @@ class VotingTests extends AnyFlatSpec with Matchers with BeforeAndAfterEach with
 
   "Vote aggregator" should "handle multiple beers" in {
     Seq(
+      Vote(beerId = 1, customerId = 1, vote = 1),
+      Vote(beerId = 1, customerId = 1, vote = 1),
+      Vote(beerId = 1, customerId = 1, vote = 1),
+      Vote(beerId = 1, customerId = 1, vote = 1),
       Vote(beerId = 1, customerId = 1, vote = 1),
       Vote(beerId = 2, customerId = 1, vote = 1),
       Vote(beerId = 1, customerId = 2, vote = 1),

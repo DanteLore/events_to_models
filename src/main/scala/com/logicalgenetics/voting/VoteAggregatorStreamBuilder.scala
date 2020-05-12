@@ -11,6 +11,7 @@ import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.{Serde, Serdes}
 import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.kstream.{Consumed, Grouped, Materialized, Produced}
+import org.apache.kafka.streams.scala.kstream.KTable
 import org.apache.kafka.streams.scala.{ByteArrayKeyValueStore, StreamsBuilder}
 
 object VoteAggregatorStreamBuilder {
@@ -69,7 +70,7 @@ object VoteAggregatorStreamBuilder {
       .reduce((_, latest) => latest)
 
     // Map to Scores, group by beer ID and reduce to give scores by beer
-    val beerScores = votesByCustomerAndBeer
+    val beerScores: KTable[String, Score] = votesByCustomerAndBeer
       .mapValues(vote => Score(vote.beerId, vote.vote))
       .groupBy((_, score) => (score.beerId.toString, score))
       .reduce(_ + _, _ - _)
