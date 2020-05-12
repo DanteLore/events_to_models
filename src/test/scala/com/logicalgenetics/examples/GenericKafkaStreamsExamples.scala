@@ -4,14 +4,13 @@ import java.time.{Duration, Instant}
 import java.util.Properties
 
 import com.logicalgenetics.Config
-import com.logicalgenetics.voting.VoteAggregatorStreamBuilder
-import org.apache.kafka.common.serialization.{IntegerDeserializer, IntegerSerializer, Serde, StringDeserializer, StringSerializer}
-import org.apache.kafka.streams.scala.kstream.{Consumed, Grouped, Materialized, Produced}
+import org.apache.kafka.common.serialization._
+import org.apache.kafka.streams.scala.kstream.{Consumed, Grouped, KStream, KTable, Materialized, Produced}
 import org.apache.kafka.streams.scala.{ByteArrayKeyValueStore, Serdes, StreamsBuilder}
 import org.apache.kafka.streams.{StreamsConfig, TopologyTestDriver}
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import scala.jdk.CollectionConverters._
 
@@ -32,10 +31,8 @@ class GenericKafkaStreamsExamples extends AnyFlatSpec with Matchers with BeforeA
     implicit val consumed: Consumed[String, Int] = Consumed.`with`(Serdes.String, Serdes.Integer)
     implicit val produced: Produced[String, Int] = Produced.`with`(Serdes.String, Serdes.Integer)
 
-    { // This is where the magic happens
-      val numbers = builder.stream[String, Int]("input")
-      numbers.to("output")
-    }
+    val numbers = builder.stream[String, Int]("input")
+    numbers.to("output")
 
     val driver = new TopologyTestDriver(builder.build, streamProperties)
     val inputTopic = driver.createInputTopic("input", new StringSerializer(), new IntegerSerializer())
@@ -67,11 +64,9 @@ class GenericKafkaStreamsExamples extends AnyFlatSpec with Matchers with BeforeA
     implicit val grouped: Grouped[String, Int] = Grouped.`with`(Serdes.String, Serdes.Integer)
     implicit val materialisedVotes: Materialized[String, Int, ByteArrayKeyValueStore] = Materialized.as("counts")
 
-    { // This is where the magic happens
-      val numbers = builder.stream[String, Int]("input")
-      val counts = numbers.groupByKey.reduce((a, b) => a + b)
-      counts.toStream.to("output")
-    }
+    val numbers = builder.stream[String, Int]("input")
+    val counts = numbers.groupBy((k, _) => k).reduce((a, b) => a + b)
+    counts.toStream.to("output")
 
     val driver = new TopologyTestDriver(builder.build, streamProperties)
     val inputTopic = driver.createInputTopic("input", new StringSerializer(), new IntegerSerializer())
@@ -86,7 +81,7 @@ class GenericKafkaStreamsExamples extends AnyFlatSpec with Matchers with BeforeA
 
     val result = outputTopic.readRecordsToList().asScala.toList
 
-    result.map(x => (x.key, x.value)) shouldEqual Seq(("a", 3), ("b", 70))
+    result.map(x => (x.key, x.value)) shouldEqual Seq(("a", 1), ("a", 3), ("b", 30), ("b", 70))
 
     driver.close()
   }
