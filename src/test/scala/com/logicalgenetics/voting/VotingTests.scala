@@ -16,7 +16,7 @@ import org.apache.kafka.streams.{TestInputTopic, TestOutputTopic, TopologyTestDr
 
 import scala.jdk.CollectionConverters._
 
-class VotingTests  extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class VotingTests extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
   var driver: Option[TopologyTestDriver] = None
   var inputTopic: Option[TestInputTopic[String, Vote]] = None
   var outputTopic: Option[TestOutputTopic[String, Score]] = None
