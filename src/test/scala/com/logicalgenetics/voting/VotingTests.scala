@@ -1,6 +1,7 @@
 package com.logicalgenetics.voting
 
 import java.time.{Duration, Instant}
+import java.util.Properties
 
 import com.logicalgenetics.Config
 import com.logicalgenetics.avro.KafkaAvroCaseClassSerdes
@@ -12,7 +13,7 @@ import org.apache.kafka.streams.scala.StreamsBuilder
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import org.apache.kafka.streams.{TestInputTopic, TestOutputTopic, TopologyTestDriver}
+import org.apache.kafka.streams.{StreamsConfig, TestInputTopic, TestOutputTopic, TopologyTestDriver}
 
 import scala.jdk.CollectionConverters._
 
@@ -20,6 +21,14 @@ class VotingTests extends AnyFlatSpec with Matchers with BeforeAndAfterEach with
   var driver: Option[TopologyTestDriver] = None
   var inputTopic: Option[TestInputTopic[String, Vote]] = None
   var outputTopic: Option[TestOutputTopic[String, Score]] = None
+
+  val streamProperties: Properties = {
+    val p = new Properties()
+    p.put(StreamsConfig.APPLICATION_ID_CONFIG, "vote_aggregator")
+    p.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "")
+    p.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000) // Limit buffering to increase chattiness for demo!
+    p
+  }
 
   override def beforeEach(): Unit = {
     val builder = new StreamsBuilder
@@ -41,8 +50,8 @@ class VotingTests extends AnyFlatSpec with Matchers with BeforeAndAfterEach with
 
     //Create Actual Stream Processing pipeline
     VoteAggregatorStreamBuilder.build(builder, schemaRegistryClient)
-    driver = Some(new TopologyTestDriver(builder.build, VoteAggregatorStreamBuilder.streamProperties))
-    inputTopic = Some(driver.get.createInputTopic(VoteAggregatorStreamBuilder.inputTopic, new StringSerializer(), voteSerde.serializer()))
+    driver = Some(new TopologyTestDriver(builder.build, streamProperties))
+    inputTopic = Some(driver.get.createInputTopic(VoteAggregatorStreamBuilder.inputTopic, new StringSerializer(), voteSerde.serializer(), recordBaseTime, advance1Min))
     outputTopic = Some(driver.get.createOutputTopic(VoteAggregatorStreamBuilder.beerScoresTopic, new StringDeserializer(), scoreSerde.deserializer()))
   }
 
@@ -86,7 +95,7 @@ class VotingTests extends AnyFlatSpec with Matchers with BeforeAndAfterEach with
     val result = outputTopic.get.readRecordsToList().asScala.toList
 
     result.last.value shouldBe Score(beerId = 1, score = 1, count = 1)
-    // FAILS! result.length shouldBe 1
+    result.length shouldBe 1
   }
 
   "Vote aggregator" should "take the latest vote for a customer" in {
