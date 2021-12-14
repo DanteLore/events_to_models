@@ -1,10 +1,10 @@
 # Events to Models
 
 You can read more about this on my website:
-* Part 1: [The problem: turning events into models](http://logicalgenetics.com/data-engineering-in-real-time/)
-* Part 2: [Events into models using Kafka and KSQL](http://logicalgenetics.com/kafkas-beer-festival/)
-* Part 3: [Aggregations and charting](http://logicalgenetics.com/time-at-the-bar-chart/)
-* Part 4: [Loading and processing data with Kafka Connect and Kafka Streams](http://logicalgenetics.com/one-for-the-road/)
+* Part 1: [The problem: turning events into models](https://dantelore.com/posts/data-engineering-in-real-time/)
+* Part 2: [Events into models using Kafka and KSQL](https://dantelore.com/posts/kafkas-beer-festival/)
+* Part 3: [Aggregations and charting](https://dantelore.com/posts/time-at-the-bar-chart/)
+* Part 4: [Loading and processing data with Kafka Connect and Kafka Streams](https://dantelore.com/posts/one-for-the-road/)
 
 ## Using the Confluent Platform
 
